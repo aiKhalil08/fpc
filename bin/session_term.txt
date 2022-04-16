@@ -1,0 +1,2 @@
+session = 2022/2023
+term = FIRST TERM

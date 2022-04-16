@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mail>
+<sender>ADMIN</sender>
+<receipients type='student'>
+<name>IBRAHIM IDIAGBON</name>
+</receipients>
+<date>06/Feb/2022 19:19</date>
+<title>NOTIFICATION OF PROMOTION.</title>
+<message>
+Congratulations, IBRAHIM IDIAGBON. This is to inform you that you have been promoted to JSS 3A.
+</message>
+</mail>

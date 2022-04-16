@@ -1,0 +1,6 @@
+user_1 = admin
+pass_1 = admin1pass
+user_2 = secondad
+pass_2 = admin2pass
+user_3 = khalil
+pass_3 = khalil220802
