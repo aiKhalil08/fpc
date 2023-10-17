@@ -1,0 +1,40 @@
+@media print {
+    body {
+        min-width: fit-content;
+    }
+    h3 {display: none;}
+    article.homepage {display: none;}
+    span.toggle_result_view {display: none;}
+    body > header {display: none;}
+    body > footer {display: none;}
+    section.spreadsheets {
+        margin: 0;
+        padding: 0;
+    }
+    table.sticky_parts, table.full_view {
+        font-size: .7em;
+        border-collapse: collapse;
+    }
+    table.full_view td, table.full_view th {padding: .7em .2em;}
+    table.sticky_parts thead th, table.sticky_parts tbody th, table.full_view thead th, table.full_view tbody th {position: static;}
+
+    /* student result */
+    section.field_set {
+        margin-top: 3em;
+    }
+
+    article#passport {
+        flex: 0 0 30%;
+        border-bottom: none;
+        border-right: 1px solid var(--fpc-grey);
+    }
+    article.names {flex: 1;}
+    article.names span:first-of-type {
+        width: 155px;
+        flex: 0 0 auto;
+    }
+    article.names span:last-of-type {
+        margin-left: .2em; 
+    }
+    div#result_motto, img#result_logo {display: block;}
+}

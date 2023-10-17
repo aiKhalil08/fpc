@@ -1,5 +1,6 @@
 <?php
 //the following class interracts with db
+inthenameofAll
 //require '../bin/errorlib.php';
 class Database {
 	public static function connect_db($type) {//creates a connection with db
@@ -8,10 +9,16 @@ class Database {
 				$config_file = '../bin/admin_confg.txt';
 				break;
 			case 'staff':
-				$config_file = '../bin/staff_confg.txt';
+				$config_file = '../bin/admin_confg.txt';
 				break;
 			case 'student':
-				$config_file = '../bin/student_confg.txt';
+				$config_file = '../bin/admin_confg.txt';
+				break;
+			case 'blog_user':
+				$config_file = '../bin/admin_confg.txt';
+				break;
+			case 'blog_writer':
+				$config_file = '../bin/admin_confg.txt';
 				break;
 			default:
 				throw new CustomException(debug_backtrace(), 'UNKOWN USER TYPE TRYING TO ACCESS DB');
@@ -68,7 +75,7 @@ class Database {
 		} else if ($ret == false) {
 			if ($sql_prep->fetch(PDO::FETCH_ASSOC) == false) {
 				return true;
-			}
+			} else return false;
 		}
 	}
 	public static function check_unique_id($id, $table, $ret = false) {//fetchs info using id
@@ -151,7 +158,7 @@ class Database {
 			if ($id) {
 				$statement .= 'WHERE tab1.student_id = '.$id.' ';
 			}
-			$statement .= 'ORDER BY student_first_name';
+			$statement .= 'ORDER BY student_class, student_first_name';
 		} else if ($type == 'staff') {
 			$statement = 'SELECT tab1.*, tab2.staff_passport FROM staffs AS tab1 ';
 			$statement .= 'INNER JOIN staffs_bio AS tab2 ';
@@ -159,7 +166,7 @@ class Database {
 			if ($id) {
 				$statement .= 'WHERE tab1.staff_id = '.$id.' ';
 			}
-			$statement .= 'ORDER BY staff_first_name';
+			$statement .= 'ORDER BY staff_role, staff_first_name';
 		}
 		$result = $obj->query($statement);
 		$array = $result->fetchAll(PDO::FETCH_ASSOC);
@@ -175,7 +182,7 @@ class Database {
 		if ($offered == true) {
 			$result = array();
 			$sql = 'SELECT subject_name, '.$class_col.' FROM subjects WHERE classes LIKE '.$class;
-			/*if (!*/$res = $conn->query($sql);//) throw new CustomException('UNABLE TO EXECUTE SQL STATEMENT');
+			if (!$res = $conn->query($sql)) throw new CustomException('UNABLE TO EXECUTE SQL STATEMENT');
 			$res = $res->fetchAll(PDO::FETCH_ASSOC);
 			$index = 0;
 			foreach ($res as $key) {
@@ -183,7 +190,9 @@ class Database {
 				$result[$index]['teacher_id'] = $key[$class_col];
 				if ($key[$class_col]) {
 					$data = self::check_unique_id($key[$class_col], 'staffs', 1);
-					$result[$index]['teacher_name'] = $data['staff_first_name'].' '.$data['staff_last_name']; 
+					if ($data) {
+						$result[$index]['teacher_name'] = $data['staff_first_name'].' '.$data['staff_last_name']; 
+					} else $result[$index]['teacher_name'] = 'NONE';
 				} else {
 					$result[$index]['teacher_name'] = 'NONE';
 				}
@@ -192,32 +201,49 @@ class Database {
 		} else if ($offered == false) {
 			$sql = 'SELECT subject_name FROM subjects WHERE subject_name NOT IN (SELECT subject_name FROM subjects WHERE classes LIKE '.$class.')';
 			$res = $conn->query($sql);
-			$result = $res->fetchAll(PDO::FETCH_ASSOC);
+			$result = [];
+			$subject = $res->fetch(PDO::FETCH_ASSOC);
+			while ($subject) {
+				$result[] = strtolower($subject['subject_name']);
+				$subject = $res->fetch(PDO::FETCH_ASSOC);
+			}
 		}
 		return $result;
 	}
-	public static function get_all_subjects() {
+	public static function get_all_subjects($classes = false) {
 		$conn = Database::connect_db('admin');
 		$array = array();
-		$sql = 'SELECT subject_name FROM subjects';
+		$sql = 'SELECT subject_name, classes FROM subjects ORDER BY subject_name';
 		$res = $conn->query($sql);
 		while ($re = $res->fetch(PDO::FETCH_ASSOC)) {
-			$array[] = $re['subject_name'];
+			if (!$classes) {
+				$array[] = $re['subject_name'];
+			} else {
+				$arr = [];
+				$arr['name'] = $re['subject_name'];
+				$arr['classes'] = $re['classes'];
+				$array[] = $arr;
+			}
 		}
 		return $array;
 	}
-	public static function check_if_subject_exists($new_subjects) {//checks if subject exists in db
+	public static function check_if_subject_exists($new_subjects, $ret = false) {//checks if subject exists in db
 		$exists = array();
 		$conn = Database::connect_db('admin');
 		$new = $new_subjects;
-		foreach ($new as $ne) {
-			$ne = $conn->quote($ne);
-			$sql = 'SELECT * FROM subjects WHERE subject_name = '.$ne;
-			$res = $conn->query($sql);
-			if ($res->fetch(PDO::FETCH_ASSOC)) {
-				$exists[] = 'exists';
+		if (!$ret) {
+			foreach ($new as $ne) {
+				$ne = $conn->quote($ne);
+				$sql = 'SELECT * FROM subjects WHERE subject_name = '.$ne;
+				$res = $conn->query($sql);
+				if ($res->fetch(PDO::FETCH_ASSOC)) {
+					$exists[] = 'exists';
+				}
 			}
-		}	
+		} else {
+			$res = $conn->query('SELECT * FROM subjects WHERE subject_name = '.$conn->quote($new_subjects));
+			return $res->fetch(PDO::FETCH_ASSOC);
+		}
 		if (sizeof($exists) > 0) {
 			return true;
 		} else {
@@ -292,8 +318,7 @@ class Database {
 		return $info;
 	}
 	public static function check_subject_teacher($username, $ret = false) {//checks subjects taught by teacher
-		$classes = array('JSS 1', 'JSS 2', 'JSS 3', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$classes = CLASSES;
 		$array = array();
 		$conn = Database::connect_db('admin');
 		$orig_id = self::check_unique_username($username, 'staffs', 1)['staff_id'];
@@ -303,9 +328,16 @@ class Database {
 		$pdos_obj->setFetchMode(PDO::FETCH_ASSOC);
 		$res = $pdos_obj->fetchAll();
 		foreach ($res as $re) {
+			$fetched = [];
 			foreach ($classes as $class) {
+				$arr = [];
+				if (preg_match('/^(jss) (\d)(\w)/i', $class, $arr)) {
+					$class = $arr[1].' '.$arr[2];
+					if (in_array($class, $fetched)) continue;
+					array_push($fetched, $class);
+				}
 				$index = str_replace(' ', '_', strtolower($class));
-				if ($orig_id == $re[$index]) $array[] = strtoupper($re['subject_name']).' - '.$class;
+				if ($re[$index] == $orig_id) $array[] = strtoupper($re['subject_name']).' - '.$class;
 			}
 		}
 		if ($ret != false) {
@@ -367,7 +399,7 @@ class Database {
 			}
 		}
 	}
-	public function get_subject_students($subject, $class, $sess, $ret = false, $spec = false) {//fetchs all students offering a subject
+	public static function get_subject_students($subject, $class, $sess, $ret = false, $spec = false) {//fetchs all students offering a subject
 		$array = array();
 		if ($spec) {
 			$orig_class = $class;
@@ -426,7 +458,7 @@ class Database {
 		$conn = Database::connect_db('admin');
 		$session = $conn->quote($sess);
 		if (!$spec) {
-			$sql = 'SELECT '.$subject.'.student_id FROM  '.$subject.', students WHERE '.$subject.'.student_class = '.$class.' AND '.$subject.'.session = '.$session.' AND '.$subject.'.student_id = students.student_id ORDER BY students.student_first_name';	
+			$sql = 'SELECT '.$subject.'.student_id FROM '.$subject.', students WHERE '.$subject.'.student_class = '.$class.' AND '.$subject.'.session = '.$session.' AND '.$subject.'.student_id = students.student_id ORDER BY students.student_first_name';	
 		} else {
 			$orig_class = $conn->quote($orig_class);
 			$sql = 'SELECT '.$subject.'.student_id FROM  '.$subject.', students WHERE '.$subject.'.student_class = '.$class.' AND '.$subject.'.session = '.$session.' AND '.$subject.'.student_id = students.student_id AND '.$subject.'.student_id IN (SELECT student_id FROM students WHERE student_class = '.$orig_class.') ORDER BY students.student_first_name';
@@ -624,7 +656,8 @@ class XML {
 		if (!$xml = simplexml_load_file($file)) throw new CustomException(debug_backtrace(), 'UNABLE TO READ XML FILE');
 		$sessions = $xml->sessions;
 		foreach ($sessions->children() as $session) {
-			if ($session['session'] == $sess) {
+			
+			if (strval($session['session']) == strval($sess)) {
 				$sel_sess = $session;
 				foreach ($sel_sess->subject as $sub) {
 					$array[] = $sub;
@@ -632,7 +665,22 @@ class XML {
 				break;
 			}
 		}
+
 		return $array;
+	}
+	public static function get_session_class($student_id, $sess) {
+		$file = self::create_file_name($student_id, 'student');
+		if (!$xml = simplexml_load_file($file)) throw new CustomException(debug_backtrace(), 'UNABLE TO READ XML FILE');
+		$sessions = $xml->sessions;
+		$class = null;
+		foreach ($sessions->children() as $session) {
+			if (strval($session['session']) == strval($sess)) {
+				$class = $session['class'];
+				break;
+			}
+		}
+
+		return $class;
 	}
 }
 //the following classes handle the login logics
@@ -644,7 +692,6 @@ class Login {
 		//session_start();
 		$this->input_username = $username;
 		$this->input_password = $password;
-		$this->type = $type;
 	}
 	protected static function redirect($url) {
 		return header('location: '.$url);
@@ -689,13 +736,13 @@ class Mod_AdminLogin extends Login {
 				$this->create_username_cookie('user_type', 'admin');
 				Login::redirect('./index.php');
 			} else {
-				Login::$login_errors = 'THE PASSWORD YOU INPUTTED DOES NOT MATCH THE USERNAME.';
+				Login::$login_errors = ['The password you have inputted is wrong.'];
 			}
 		} else {
-			Login::$login_errors = 'PLEASE INPUT A VALID USERNAME.';
+			Login::$login_errors = ['Please input a valid username.'];
 		}
 		if (Login::$login_errors) {
-			Login::set_session('login_errors',self::$login_errors);
+			Login::set_session('errors', self::$login_errors);
 			Login::redirect('./login.php');
 		}
 	}
@@ -739,10 +786,10 @@ class Mod_St_Login extends Login {
 		}
 	}
 	public function st_login() {
-		$conn = Database::connect_db('staff');
+		$conn = Database::connect_db($this->type);
 		$lastname = $this->get_lastname($conn);
 		if (!$this->validate_password($lastname)) {
-			$_SESSION['errors'] = 'YOU HAVE INPUTTED A WRONG PASSWORD.';
+			$_SESSION['errors'] = ['You have inputted a wrong password.'];
 			header('location: ./login.php');
 			die();
 		} else {
@@ -806,6 +853,25 @@ Class Mod_Addst {
 		if (!$pdos_obj = $obj->prepare($statement)) throw new CustomException(debug_backtrace(), 'UNABLE TO PREPARE THE SQL STATEMENT');
 		return $pdos_obj;
 	}
+	private function deregister_student() {
+		if ($this->existing) {
+			$session = new Mod_Change_Session();
+			$cur_session = $session->get_current_info()['session'];
+			$check_reg = new Mod_Check_Registered([['student_id'=>$this->id]], $cur_session);
+			$present_class = Database::check_unique_id($this->id, 'students', 1)['student_class'];
+			if ($check_reg->check_registered()[0]['status'] == 'reg' && $this->class_role != $present_class) {
+				$match1 = [];
+				$match2 = [];
+				if (preg_match('/^JSS (\d)/', $this->class_role, $match1) && preg_match('/^JSS (\d)/', $present_class, $match2)) {
+					if ($match1[1] != $match2[1]) {
+						deregister($this->id);
+					} else {return true;}
+				}
+				deregister($this->id);
+			}
+		}
+		return true;
+	}
 	private function execute_statement($obj) {//binds and execute the prepared SQL statement
 		$sql_prep = $obj;
 		if ($this->existing == false) {
@@ -826,22 +892,12 @@ Class Mod_Addst {
 	private function redr_to_edit_bio($type, $index) {
 		header('location: ./edit_bio.php?pe='.$type.'&id='.$index);
 	}
-	public function mod_add_st() {//compiles all add function. Called in contrl.
+	public function mod_add_st() {//compiles all add function. Called in contrl.	
 		$conn = Database::connect_db('admin');
 		if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE THE SQL STATEMENT');
 		$sql = $this->prep_statement($conn, $statement);
-		if ($this->execute_statement($sql)) {
-			if ($this->existing == false) {
-				$index = $conn->lastInsertId();
-			} else {
-				$index = $this->id;
-			}
-			if ($this->type == 'student') {
-				$type = 'tn';
-			} else if ($this->type == 'staff'){
-				$type = 'fa';
-			}
-			$this->redr_to_edit_bio($type, $index);
+		if ($this->deregister_student() && $this->execute_statement($sql)) {
+			
 		}
 	}
 }
@@ -849,12 +905,11 @@ Class Mod_Addst {
 class Mod_Editst {
 	protected static function set_passport_dir($type, $id, $passport) {
 		$conn = Database::connect_db('admin');		
-		$name = $id;
 		$extension = pathinfo($passport['name'], PATHINFO_EXTENSION);
 		if ($type == 'student') {
-			$filedir = '../bin/passports/students/'.$name.'.'.$extension;
+			$filedir = '../bin/passports/students/'.$id.'.'.$extension;
 		} else if ($type == 'staff') {
-			$filedir = '../bin/passports/staffs/'.$name.'.'.$extension;
+			$filedir = '../bin/passports/staffs/'.$id.'.'.$extension;
 		}
 		return $filedir;
 	}
@@ -903,6 +958,7 @@ class Mod_Editst {
 	}
 	protected static function upload_passport($type, $id, $passport) {//uploads student passport
 		$passport_dir = self::set_passport_dir($type, $id, $passport);
+		if (is_file($passport_dir)) unlink($passport_dir);
 		if (move_uploaded_file($passport['tmp_name'], $passport_dir)) {
 			return true;
 		}
@@ -953,10 +1009,10 @@ class Mod_Editstudent_bio extends Mod_Editst {
 				break;
 		}
 		switch ($religion) {
-			case 'ISLAM':
+			case 'CHRISTIANITY':
 				$this->student_religion = 1;
 				break;
-			case 'CHRISTIANITY':
+			case 'ISLAM':
 				$this->student_religion = 2;
 				break;
 			case 'OTHERS':
@@ -991,9 +1047,9 @@ class Mod_Editstudent_bio extends Mod_Editst {
 			$statement .= 'student_address = :s_address, ';
 			$statement .= 'student_storg = :s_storg, ';
 			$statement .= 'student_gender = :s_gender, ';
-			$statement .= 'student_religion = :s_religion, ';
-			$statement .= 'student_passport = :s_passport ';
-			$statement .= 'WHERE student_id = :id';
+			$statement .= 'student_religion = :s_religion';
+			if (!empty($this->student_passport['name'])) $statement .= ', student_passport = :s_passport';
+			$statement .= ' WHERE student_id = :id';
 		}
 		return $statement;
 	}
@@ -1013,7 +1069,7 @@ class Mod_Editstudent_bio extends Mod_Editst {
 		$sql_prep->bindValue(':s_storg', $this->student_storg);
 		$sql_prep->bindValue(':s_gender', $this->student_gender);
 		$sql_prep->bindValue(':s_religion', $this->student_religion);
-		$sql_prep->bindValue(':s_passport', $passport_dir);
+		if (!empty($this->student_passport['name'])) $sql_prep->bindValue(':s_passport', $passport_dir);
 		if ($sql_prep->execute()) {
 			return true;
 		} else {
@@ -1023,8 +1079,8 @@ class Mod_Editstudent_bio extends Mod_Editst {
 	public function mod_edit_bio() {
 		$conn = Database::connect_db('admin');
 		if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE SQL STATEMENT');
-		$sql = $this->prep_statement($conn,$statement);
-		if (!Parent::upload_passport('student', $this->student_id, $this->student_passport)) {
+		$sql = $this->prep_statement($conn, $statement);
+		if (!empty($this->student_passport['name']) && !Parent::upload_passport('student', $this->student_id, $this->student_passport)) {
 			throw new CustomException(debug_backtrace(), 'UNABLE TO UPLOAD STUDENT PASSPORT');
 		}
 		if ($this->existing == false) {
@@ -1035,8 +1091,9 @@ class Mod_Editstudent_bio extends Mod_Editst {
 		}
 		if ($this->execute_statement($sql)) {
 			echo 'STUDENT\'S BIO HAS BEEN SUCCESSFULLY UPDATED!';
-			echo '<br><a href=\'./index.php\'>GO TO HOMEPAGE.</a> ';
-			echo '<a href=\'./student_bio.php?id='.$this->student_id.'\'>VIEW BIO...</a>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div>';
+			echo '<div><a href=\'./student_bio.php?id='.$this->student_id.'\'>VIEW BIO...</a></div></article>';
+			unset($_SESSION['basic_info']);
 		}
 	}
 }
@@ -1074,10 +1131,10 @@ class Mod_Editstaff_Bio extends Mod_Editst {
 				break;
 		}
 		switch ($s_religion) {
-			case 'ISLAM':
+			case 'CHRISTIANITY':
 				$this->staff_religion = 1;
 				break;
-			case 'CHRISTIANITY':
+			case 'ISLAM':
 				$this->staff_religion = 2;
 				break;
 			case 'OTHERS':
@@ -1114,9 +1171,9 @@ class Mod_Editstaff_Bio extends Mod_Editst {
 			$statement .= 'staff_address = :s_address, ';
 			$statement .= 'staff_storg = :s_storg, ';
 			$statement .= 'staff_gender = :s_gender, ';
-			$statement .= 'staff_religion = :s_religion, ';
-			$statement .= 'staff_passport = :s_passport ';
-			$statement .= 'WHERE staff_id = :id';
+			$statement .= 'staff_religion = :s_religion';
+			if (!empty($this->staff_passport['name'])) $statement .= ', staff_passport = :s_passport';
+			$statement .= ' WHERE staff_id = :id';
 		}
 		return $statement;
 	}
@@ -1137,7 +1194,7 @@ class Mod_Editstaff_Bio extends Mod_Editst {
 		$sql_prep->bindValue(':s_storg', $this->staff_storg);
 		$sql_prep->bindValue(':s_gender', $this->staff_gender);
 		$sql_prep->bindValue(':s_religion', $this->staff_religion);
-		$sql_prep->bindValue(':s_passport', $passport_dir);
+		if (!empty($this->staff_passport['name'])) $sql_prep->bindValue(':s_passport', $passport_dir);
 		if ($sql_prep->execute()) {
 			return true;
 		} else {
@@ -1148,7 +1205,7 @@ class Mod_Editstaff_Bio extends Mod_Editst {
 		$conn = Database::connect_db('admin');
 		if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE SQL STATEMENT');
 		$sql = $this->prep_statement($conn,$statement);
-		if (!Parent::upload_passport('staff', $this->staff_id, $this->staff_passport)) {
+		if (!empty($this->staff_passport['name']) && !Parent::upload_passport('staff', $this->staff_id, $this->staff_passport)) {
 			throw new CustomException(debug_backtrace(), 'UNABLE TO UPLOAD STAFF PASSPORT');
 		}
 		if ($this->existing == false) {
@@ -1158,9 +1215,12 @@ class Mod_Editstaff_Bio extends Mod_Editst {
 			Parent::add_to_mails('staff', $this->staff_id);
 		}
 		if ($this->execute_statement($sql)) {
+			unset($_SESSION['basic_info']);
+			
 			echo 'STAFF\'S BIO HAS BEEN SUCCESSFULLY UPDATED!';
-			echo '<br><a href=\'./index.php\'>GO TO HOMEPAGE.</a> ';
-			echo '<a href=\'./staff_bio.php?id='.$this->staff_id.'\'>VIEW BIO...</a>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div>';
+			echo '<div><a href=\'./staff_bio.php?id='.$this->staff_id.'\'>VIEW BIO...</a></div></article>';
+			unset($_SESSION['basic_info']);
 		}
 	}
 }
@@ -1181,8 +1241,10 @@ class Mod_Search_St {
 			$passport = 'student_passport';
 			$id = 'student_id';
 			$order = 'student_first_name';
-			if ($this->method == 'class_role') {
+			if ($this->method == 'class') {
 				$column = 'student_class';
+			} else if ($this->method == 'username') {
+				$column = 'student_username';
 			} else if ($this->method == 'surname') {
 				$column = 'student_last_name';
 			}
@@ -1192,8 +1254,10 @@ class Mod_Search_St {
 			$passport = 'staff_passport';
 			$id = 'staff_id';
 			$order = 'staff_first_name';
-			if ($this->method == 'class_role') {
+			if ($this->method == 'role') {
 				$column = 'staff_role';
+			} else if ($this->method == 'username') {
+				$column = 'staff_username';
 			} else if ($this->method == 'surname') {
 				$column = 'staff_last_name';
 			}
@@ -1201,12 +1265,12 @@ class Mod_Search_St {
 		$statement = 'SELECT tab1.*, tab2.'.$passport.' FROM '.$table_1.' AS tab1 ';
 		$statement .= 'INNER JOIN '.$table_2.' AS tab2 ';
 		$statement .= 'ON tab1.'.$id.' = tab2.'.$id.' ';
-		if ($this->method == 'class_role') {
+		if ($this->method == 'class' || $this->method == 'role') {
 			$statement .= 'WHERE tab1.'.$column.' = :input ';
-		} else if ($this->method == 'surname') {
+		} else if ($this->method == 'surname' || $this->method == 'username') {
 			$statement .= 'WHERE tab1.'.$column.' LIKE :input ';
 		}
-		$statement .= 'ORDER BY '.$order;
+		$statement .= 'ORDER BY tab1.'.$order;
 		return $statement;
 	}
 	private function prep_statement($obj, $statement) {
@@ -1215,9 +1279,9 @@ class Mod_Search_St {
 	}
 	private function execute_statement($obj) {
 		$sql_prep = $obj;
-		if ($this->method == 'class_role') {
+		if ($this->method == 'class' || $this->method == 'role') {
 			$sql_prep->bindValue(':input', $this->input);
-		} else if ($this->method == 'surname') {
+		} else if ($this->method == 'surname' || $this->method == 'username') {
 			$sql_prep->bindValue(':input', '%'.$this->input.'%');
 		}
 		if ($sql_prep->execute()) {
@@ -1245,19 +1309,18 @@ class Mod_Delete_St {
 		$this->input = $input;
 	}
 	private function explode_input() {
-		if (stripos($this->input, ',')) {
-			$this->input = explode(',', $this->input);
+		if (is_array($this->input)) {
 			for ($i = 0; $i < sizeof($this->input); $i++) { 
 				$this->input[$i] = trim($this->input[$i]);
 			}
 			foreach ($this->input as $username) {
-				$info = Database::check_unique_username($username, 'students', 1);
-				$this->ids[] = $info['student_id'];
+				$info = Database::check_unique_username($username, $this->type.'s', 1);
+				$this->ids[] = $info[$this->type.'_id'];
 			}
 			$this->multiple = true;
 		} else {
-			$info = Database::check_unique_username($this->input, 'students', 1);
-			$this->ids[] = $info['student_id'];	
+			$info = Database::check_unique_username($this->input, $this->type.'s', 1);
+			$this->ids[] = $info[$this->type.'_id'];	
 		}
 	}
 	private function create_statement() {
@@ -1338,12 +1401,12 @@ class Mod_Delete_St {
 		}
 	}
 	private function delete_files() {
+		$conn = Database::connect_db('admin');
 		foreach ($this->ids as $id) {
-			$file = '../bin/passports/'.$this->type.'s/'.$id;
-			$extension = 'png';
-			$file = $file.'.'.$extension;
-			if (!unlink($file)) {
-				throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE PASSPORT FILE '.$file);
+			if (!$res = $conn->query('SELECT '.$this->type.'_passport FROM '.$this->type.'s_bio WHERE '.$this->type.'_id = '.$id))  throw new CustomException(debug_backtrace(), 'UNABLE TO FETCH PASSPORTS FROM DB');
+			$passport = $res->fetch(PDO::FETCH_ASSOC)[$this->type.'_passport'];
+			if (!unlink($passport)) {
+				throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE PASSPORT FILE '.$passport);
 			}
 		}
 		foreach ($this->ids as $id) {
@@ -1354,30 +1417,47 @@ class Mod_Delete_St {
 		}
 		return true;
 	}
+	private function archive_results() {
+		if ($this->type == 'student') {
+			if (create_archive($this->ids)) return true;
+		}
+		return true;
+	}
 	public function mod_delete() {
 		$this->explode_input();
 		if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE SQL STATEMENT');
 		 $conn = Database::connect_db('admin');
 		 $pdos = $this->prep_statement($conn, $statement);
-		 if ($this->execute_statement($pdos) && $this->delete_from_subjects() && $this->delete_files()) {
-		 	echo strtoupper($this->type).'S HAVE BEEN DELETED SUCCESSFULLY';
-		 	echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
-		 }
+		if ($this->type == 'student') {
+			if ($this->archive_results() && $this->delete_files() && $this->delete_from_subjects() && $this->execute_statement($pdos)) {
+				echo strtoupper($this->type).'(S) HAVE BEEN DELETED SUCCESSFULLY';
+				echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
+			}
+		} else {
+			if ($this->delete_files() && $this->execute_statement($pdos)) {
+				echo strtoupper($this->type).'(S) HAVE BEEN DELETED SUCCESSFULLY';
+				echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
+			}
+		}
 	}
 }
 //the following classes handle the logics of changing session/term
 class Mod_Change_Session {
 	private $input_session;
 	private $input_term;
+	private $start_date;
 	private static $cur_session;
 	private static $cur_term;
+	private static $cur_start_date;
 	private static $file;
-	public function __construct ($session = false, $term = false) {
+	public function __construct ($session = false, $term = false, $start_date = null) {
 		$this->input_session = $session;
 		$this->input_term = $term;
+		$this->start_date = $start_date;
 		self::$file = '../bin/session_term.txt';
 		self::set_cur_session();
 		self::set_cur_term();
+		self::set_cur_start_date();
 	}
 	private function set_cur_session() {
 		if (!$file = parse_ini_file(self::$file)) throw new CustomException(debug_backtrace(), 'COULDN\'T OPEN session_term.txt');
@@ -1387,27 +1467,34 @@ class Mod_Change_Session {
 		if (!$file = parse_ini_file(self::$file)) throw new CustomException(debug_backtrace(), 'COULDN\'T OPEN session_term.txt');
 		self::$cur_term = $file['term'];
 	}
-	public function get_current_info() {//called in contr.php
+	private function set_cur_start_date() {
+		if (!$file = parse_ini_file(self::$file)) throw new CustomException(debug_backtrace(), 'COULDN\'T OPEN session_term.txt');
+		self::$cur_start_date = $file['start_date'];
+	}
+	public static function get_current_info() {//called in contr.php
 		$array['session'] = self::$cur_session;
 		$array['term'] = self::$cur_term;
+		$array['start_date'] = self::$cur_start_date;
 		return $array;
 	}
 	public function set_sess() {
-		if ($this->input_session === self::$cur_session) {//changes only term
+		if ($this->input_session === self::$cur_session) {//changes only term and start date
 			$content = 'session = '.self::$cur_session."\n";
 			$content .= 'term = '.$this->input_term."\n";
+			$content .= 'start_date = '.$this->start_date."\n";
 			
-		} else if ($this->input_session != self::$cur_session) {//changes session and term
+		} else if ($this->input_session != self::$cur_session) {//changes session and term and start date
 			$content = 'session = '.$this->input_session."\n";
 			$content .= 'term = '.$this->input_term."\n";
+			$content .= 'start_date = '.$this->start_date."\n";
 		}
 		if (!file_put_contents(self::$file, $content)) {
 			throw new CustomException(debug_backtrace(), 'COULDN\'T ADD CONTENT TO session_term.txt');
 		} else {
 			$this->set_cur_session();
 			$this->set_cur_term();
-			echo '<h2>THE SCHOOL HAS BEEN SET TO '.self::$cur_session.' '.self::$cur_term.'.</h2>';
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<strong>THE SCHOOL HAS BEEN SET TO '.self::$cur_session.' '.self::$cur_term.'.</strong>';
+			echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
 		}
 	}
 }
@@ -1429,7 +1516,7 @@ class Mod_Add_Subjects {
 		function execute($subject) {
 			$status = false;
 			$conn = Database::connect_db('admin');
-			$subject = $conn->quote($subject);
+			$subject = $conn->quote(strtoupper($subject));
 			$sql = 'INSERT INTO subjects SET subject_name = '.$subject;
 			if ($conn->query($sql) == false) {
 				throw new CustomException(debug_backtrace(), 'COULDN\'N ADD '.$subject.' TO subjects.');
@@ -1476,7 +1563,7 @@ class Mod_Add_Subjects {
 	public function add_all_subjects() {
 		$conn = Database::connect_db('admin');
 		if ($this->create_subject_table($conn) && $this->add_subjects()) {
-			echo '<h2>';
+			echo '<strong>';
 			if (is_array($this->subjects)) {//adds multiple subjects
 				for ($i = 0; $i < sizeof($this->subjects); $i++) {
 					if ($i == (sizeof($this->subjects) - 1))  {
@@ -1487,97 +1574,93 @@ class Mod_Add_Subjects {
 				}
 				echo 'HAVE BEEN ADDED TO THE SUBJECTS OFFERED IN THE SCHOOL.</h2>';
 			} else {//adds just one subject
-				echo strtoupper($this->subjects).' HAS BEEN ADDED TO THE SUBJECTS OFFERED IN THE SCHOOL.</h2>';
+				echo strtoupper($this->subjects).' HAS BEEN ADDED TO THE SUBJECTS OFFERED IN THE SCHOOL.<strong>';
 			}
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
 		}
 	}
 }
-class Mod_Add_Class_Subjects {
-	private $class_subjects;
-	private $class;
-	public function __construct ($class, $subjects) {
-		$this->class = $class;
-		$this->class_subjects = $subjects;
+class Mod_Add_Subject_Classes {
+	private $subject;
+	private $classes;
+	public function __construct($subject, $classes) {
+		$this->subject = $subject;
+		$this->classes = $classes;
 	}
-	private function add_subjects() {
-		$status = array();
+	private function add_classes() {
 		$conn = Database::connect_db('admin');
-		function create_classes($subject, $class) {
-			$original = Database::read_classes_in_subject($subject);
-			if ($original == '') {
-				$classes = $class;
-			} else {
-				$classes = $original.','.$class;
+		function create_classes($subject, $classes) {
+			$new_classes = '';
+			for($i = 0; $i < sizeof($classes); $i++) {
+				if ($i == sizeof($classes) - 1) {
+					$new_classes .= trim($classes[$i]);
+				} else $new_classes .= trim($classes[$i]).',';
 			}
-			return $classes;
+			return $new_classes;
 		}
-		function execute($obj, $subject, $class) {
-			$classes = create_classes($subject, $class);
-			$classes = $obj->quote($classes);
+		function execute($obj, $subject, $classes) {
+			if (empty($classes)) {
+				$classes = 'NULL';
+			} else {
+				$classes = create_classes($subject, $classes);
+				$classes = $obj->quote($classes);
+			}
 			$subject = $obj->quote($subject);
 			$sql = 'UPDATE subjects SET classes = '.$classes.' WHERE subject_name = '.$subject;
 			if (!$obj->query($sql)) {
-				throw new CustomException(debug_backtrace(), 'COULDN\'T ADD '.$class.' TO '.$subject);
+				throw new CustomException(debug_backtrace(), 'COULDN\'T ADD '.$classes.' TO '.$subject);
 			} else {
 				return true;
 			}
 		}
-		foreach ($this->class_subjects as $subject) {
-			if (!execute($conn, $subject, $this->class)) $status[] = 'status';
-		}
-		if (sizeof($status) > 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return execute($conn, $this->subject, $this->classes);
 	}
 	public function add_class_subjects() {
-		if ($this->add_subjects()) {
-			echo '<h2>';
-			if (sizeof($this->class_subjects) > 1) {//adds multiple subjects
-				for ($i = 0; $i < sizeof($this->class_subjects); $i++) {
-					if ($i == (sizeof($this->class_subjects) - 1))  {
-						echo strtoupper($this->class_subjects[$i]).' ';
-					} else {
-						echo strtoupper($this->class_subjects[$i]).', ';
+		if ($this->add_classes()) {
+			if (!$this->classes) {
+				echo '<strong>NO CLASS NOW OFFERS '.strtoupper($this->subject).'.</strong>';
+			} else {
+				echo '<strong>';
+				if (sizeof($this->classes) > 1) {//adds multiple classes
+					for ($i = 0; $i < sizeof($this->classes); $i++) {
+						if ($i == (sizeof($this->classes) - 1))  {
+							echo strtoupper($this->classes[$i]).' ';
+						} else {
+							echo strtoupper($this->classes[$i]).', ';
+						}
 					}
+					echo 'CAN NOW REGISTER FOR '.strtoupper($this->subject).'.</strong>';
+				} else {//adds just one subject
+					echo strtoupper($this->classes[0]).' CAN NOW REGISTER FOR '.strtoupper($this->subject).'.</strong>';
 				}
-				echo 'HAVE BEEN ADDED TO '.$this->class.'.</h2>';
-			} else {//adds just one subject
-				echo strtoupper($this->class_subjects[0]).' HAS BEEN ADDED TO '.$this->class.'.</h2>';
 			}
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
 		}
+		echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
 	}
 }
 class Mod_Set_Teacher {
 	private $type;
-	private $class;
+	private $class_subject;
 	private $teacher_id;
 	private $subject_teachers;
 	private $subject_name;
-	public function __construct ($type, $class, $id) {
+	public function __construct ($type, $class_subject, $id) {
 		$this->type = $type;
-		$this->class = $class;
+		$this->class_subject = $class_subject;
 		if ($this->type == 'class') {
 			$this->teacher_id = $id;
 		} else if ($this->type == 'subject') {
 			$this->subject_teachers = $id;
 		}
 	}
-	private function create_statement() {//creates SQL statement
+	private function create_statement($class = false) {//creates SQL statement
 		if ($this->type == 'class') {
 			$statement = 'UPDATE classes ';
 			$statement .= 'SET class_teacher_id = :id ';
 			$statement .= 'WHERE class_name = :class';
 		} else if ($this->type == 'subject') {
-			$class = $this->class;
-			$class = strtolower($class);
-			$class = str_replace(' ', '_', $class);
 			$statement = 'UPDATE subjects ';
 			$statement .= 'SET '.$class.' = :id ';
-			$statement .= 'WHERE subject_name = :class';
+			$statement .= 'WHERE subject_name = :subject';
 		}
 		return $statement;
 	}
@@ -1585,32 +1668,34 @@ class Mod_Set_Teacher {
 		if (!$pdos_obj = $obj->prepare($statement)) throw new CustomException(debug_backtrace(), 'UNABLE TO PREPARE THE SQL STATEMENT');
 		return $pdos_obj;
 	}
-	private function execute_statement($obj) {//binds and execute the prepared SQL statement
+	private function execute_statement($obj = false) {//binds and execute the prepared SQL statement
 		$sql_prep = $obj;
 		if ($this->type == 'class') {
 			$sql_prep->bindValue(':id', $this->teacher_id);
-			$sql_prep->bindValue(':class', $this->class);
+			$sql_prep->bindValue(':class', $this->class_subject);
 			if (!$sql_prep->execute()) {
 				throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE THE SQL STATEMENT');
 			} else {
 				return true;
 			}
 		} else if ($this->type == 'subject') {
-			$sql_prep->bindValue(':id', $this->teacher_id);
-			$sql_prep->bindValue(':class', $this->subject_name);
-			$sql_prep->execute();
-			if (!$sql_prep->execute()) {
-				throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE THE SQL STATEMENT');
-			} else {
-				return true;
+			foreach ($this->subject_teachers as $key => $value) {
+				$sql_prep = $this->prep_statement(Database::connect_db('admin'), $this->create_statement($key));
+				if (empty($value)) $value = NULL;
+				$sql_prep->bindValue(':id', $value);
+				$sql_prep->bindValue(':subject', $this->class_subject);
+				if (!$sql_prep->execute()) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE THE SQL STATEMENT');
+				}
 			}
+			return true;
 		}
 	}
 	public function set_teacher() {//compiles all set function. Called in contrl.
 		$conn = Database::connect_db('admin');
-		if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE THE SQL STATEMENT');
-		$pdos_obj = $this->prep_statement($conn, $statement);
 		if ($this->type == 'class') {
+			if (!$statement = $this->create_statement()) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE THE SQL STATEMENT');
+			$pdos_obj = $this->prep_statement($conn, $statement);
 			if (!$this->teacher_id) {
 				$this->teacher_id = null;
 			}
@@ -1621,35 +1706,13 @@ class Mod_Set_Teacher {
 					$name = Database::check_unique_id($this->teacher_id, 'staffs', 1);
 					$name = $name['staff_first_name'].' '.$name['staff_last_name'];
 				}
-				echo '<b>'.$name.'</b> HAS BEEN SET AS '.$this->class.' CLASS TEACHER.';
-				echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+				echo '<b>'.$name.'</b> HAS BEEN SET AS '.$this->class_subject.' CLASS TEACHER.';
+				echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
 			}
 		} else if ($this->type == 'subject') {
-			$status = array();
-			$notice = array();
-			foreach ($this->subject_teachers as $data) {
-				$data = explode('-', $data);
-				$this->subject_name = trim($data[0]);
-				if (!$data[1]) {
-					$this->teacher_id = null;
-				} else {
-					$this->teacher_id = trim($data[1]);
-				}
-				if (!$this->execute_statement($pdos_obj)) $status[] = 'status';
-				if (!$this->teacher_id) {
-					$name = 'NO ONE';
-				} else {
-					$name = Database::check_unique_id($this->teacher_id, 'staffs', 1);
-					$name = $name['staff_first_name'].' '.$name['staff_last_name'];
-				}
-				$string = '<b>'.$name.'</b> NOW TAKES '.$this->class.' '.strtoupper($this->subject_name).'.';
-				$notice[] = $string;
-			}
-			if (sizeof($status) == 0) {
-				foreach ($notice as $key) {
-					echo '<p>'.$key.'</p>';
-				}
-				echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			if ($this->execute_statement()) {
+				echo '<p><strong>SUBJECT TEACHERS SUCCESSFULLY SET</strong><p>';
+				echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
 			}
 		}
 	}
@@ -1667,8 +1730,8 @@ class Mod_Send_Mail {
 	private static $mail_id;
 	private $orig_re;
 	public function __construct($sender, $sender_user, $rec_type, $re, $title, $mail, $appendages = false) {
-		$this->send_type = base64_decode($sender);
-		$this->send_username = base64_decode($sender_user);
+		$this->send_type = $sender;
+		$this->send_username = $sender_user;
 		$this->rec_type = $this->set_rec_type($rec_type);
 		$this->orig_rec_type = $rec_type;
 		$this->orig_re = $re[0];
@@ -1678,8 +1741,8 @@ class Mod_Send_Mail {
 		$this->appendages = $appendages;
 		self::$mail_dir = '../bin/mails';
 		self::$mail_id = $this->create_mail_identity();
-		if (sizeof($this->receipient) == 0) {
-			$_SESSION['errors'] = 'INVALID DESTINATION';
+		if ($this->receipient == false || sizeof($this->receipient) == 0) {
+			$_SESSION['errors'] = ['Invalid destination'];
 			header('location: ./send_mail.php?pe='.base64_encode($this->send_type).'&me='.base64_encode($this->send_username));
 			die();
 		}
@@ -1804,7 +1867,7 @@ class Mod_Send_Mail {
 			}
 		}
 		$content .= '</receipients>'."\n";
-		$content .= '<date>'.date('d/M/Y H:i').'</date>'."\n";
+		$content .= '<date>'.date('d-M-Y H:i').'</date>'."\n";
 		$content .= '<title>'.$this->title.'</title>'."\n";
 		if ($this->appendages) {
 			$content .= '<appendages>'."\n";
@@ -1897,7 +1960,7 @@ class Mod_Send_Mail {
 		$file_dir = self::$mail_dir.'/'.self::$mail_id.'.xml';
 		$mail_content = $this->create_xml_content();
 		if ($this->create_mail($file_dir, $mail_content) && $this->add_to_receipient() && $this->add_to_sender() && $this->update_counter() && $this->upload_appendages()) {
-			if ((basename($_SERVER['HTTP_REFERER']) != 'addresults.php') && (basename($_SERVER['HTTP_REFERER']) != 'promote_studentsx.php')) {
+			if ((basename($_SERVER['HTTP_REFERER']) != 'addresults.php') && (basename($_SERVER['HTTP_REFERER']) != 'promote_students.php')) {
 				echo '<b>MAIL HAS BEEN SUCCESSFULLY SENT TO ';
 				if ($this->orig_rec_type == 'staff_username' || $this->orig_rec_type == 'student_username' || $this->orig_rec_type == 'class_teacher' || $this->orig_rec_type == 'subject_teachers') {
 					for ($i = 0; $i < sizeof($this->receipient); $i++) {
@@ -1917,7 +1980,8 @@ class Mod_Send_Mail {
 					}
 				}
 				echo '<b>';
-				echo '<p><a href=\'./index.php?pe='.base64_encode($this->send_type).'&me='.base64_encode($this->send_username).'\'>BACK TO MAILBOX.</a></p>';
+				echo '<article class=\'homepage\'><a href=\'./index.php?pe='.base64_encode($this->send_type).'&me='.base64_encode($this->send_username).'\'>BACK TO MAILBOX.</a></article>';
+				echo '<p></p>';
 			}
 		}
 	}
@@ -1926,10 +1990,16 @@ class Mod_Read_Mails {
 	private $type;
 	private $mode;
 	private $username;
-	public function __construct($mode, $type, $username = false) {
+	private $search_text;
+	private $search = false;
+	public function __construct($mode, $type, $username = false, string $search_text = null) {
 		$this->mode = $mode;
-		$this->type = base64_decode($type);
-		$this->username = base64_decode($username);
+		$this->type = $type;
+		$this->username = $username;
+		if ($search_text) {
+			$this->search = true;
+			$this->search_text = $search_text;
+		}
 	}
 	private function create_filename() {
 		if ($this->type == 'admin') {
@@ -1946,33 +2016,54 @@ class Mod_Read_Mails {
 		$xml = simplexml_load_file($this->create_filename());
 		if ($this->mode == 'sent') {
 			foreach ($xml->mails->sent->children() as $mail_id) {
-				$array[] = $mail_id;
+				if ($this->search) {
+					$file = '../bin/mails/'.$mail_id.'.xml';
+					$xml = @simplexml_load_file($file);
+					if (preg_match('/'.$this->search_text.'/i', $xml->title)) {
+						$array[] = $mail_id;
+					}
+				} else {
+					$array[] = $mail_id;
+				}
 			}
 		} else if ($this->mode == 'received') {
 			foreach ($xml->mails->received->children() as $mail_id) {
-				$array[] = $mail_id;
+				if ($this->search) {
+					$file = '../bin/mails/'.$mail_id.'.xml';
+					$xml = @simplexml_load_file($file);
+					if (preg_match('/'.$this->search_text.'/i', $xml->title)) {
+						$array[] = $mail_id;
+					}
+				} else {
+					$array[] = $mail_id;
+				}
 			}
 		}
 		if (sizeof($array) > 0) {
 			return array_reverse($array);
 		} else {
-			return false;
+			return null;
 		}
 	}
-	private function create_read_links($array) {
+	public function count_all_mails() {
+		return $this->retrieve_mail_ids() ? count($this->retrieve_mail_ids()) : 0;
+	}
+	private function create_read_links(array $array = null, string $new = null) : string {
+		$string = '';
 		if ($array) {
+			$index = 1;
 			foreach ($array as $mail) {
 				$receivers = array();
 				$file = '../bin/mails/'.$mail.'.xml';
 				$xml = @simplexml_load_file($file);
 				if ($xml) {
 					if ($this->type == 'admin' && $xml->sender == 'ADMIN') {
-						$sender = 'YOU';
+						$sender = 'You';
 					} else if ($this->type == 'staff' || $this->type == 'student') {
 						$name = Database::check_unique_username($this->username, $this->type.'s', 1);
 						$name = $name[$this->type.'_first_name'].' '.$name[$this->type.'_last_name'];
 						if ($xml->sender == $name) {
-							$sender = 'YOU';
+							$sender = 'You';
 						} else {
 							$sender = $xml->sender;
 						}
@@ -1984,8 +2075,8 @@ class Mod_Read_Mails {
 					}
 					$date = $xml->date;
 					$title = $xml->title;
-					if (strlen($xml->message) > 40) {
-						$message = substr($xml->message, 0, 40).'...';
+					if (strlen($xml->message) > 90) {
+						$message = substr($xml->message, 0, 90).'...';
 					} else {
 						$message = $xml->message;
 					}
@@ -1994,51 +2085,63 @@ class Mod_Read_Mails {
 					} else if ($this->mode == 'received') {
 						$link = './read_mail.php?id='.$mail.'&mode=ed&pe='.base64_encode($this->type).'&me='.base64_encode($this->username);
 					}
-					echo '<p>';
-					echo '<a href=\''.$link.'\'>';
-					echo '<div>';
-					echo '<b>FROM:</b> '.$sender.'.<br>';
-					echo '<b>TO:</b> ';
+					$string .= '<article class=\'mails_item';
+					$string .= $index++ <= $new ? ' new_mail' : '';
+					$string .= '\' >';
+					$string .= '<a href=\''.$link.'\'>';
+					if (isset($xml->appendages)) $string .= '<i class=\'fa-solid fa-paperclip fa-lg\'></i>';
+					$string .= '<div class=\'mails_item_info\'>';
+					$string .= '<b>From:</b> '.$sender.'.<br>';
+					$string .= '<b>To:</b> ';
 					if ($this->mode == 'sent') {
 						for ($i = 0; $i < sizeof($receivers); $i++) {
 							if ($i == 2) {
-								echo 'and others...';
+								$string .= 'and others.';
 								break;
 							} else {
 								if ($i == (sizeof($receivers) - 1)) {
-									echo $receivers[$i].'.';
+									$string .= $receivers[$i].'.';
 								} else {
-									echo $receivers[$i].', ';
+									$string .= $receivers[$i].', ';
 								}
 							}
 						}
 					} else if ($this->mode == 'received') {
 						if (sizeof($receivers) > 1) {
-							echo 'YOU AND OTHERS.';
+							$string .= 'You and others.';
 						} else {
-							if (in_array($this->username, $receivers)) {
-								echo 'YOU.';
-							} else {
-								echo $receivers[0].'.';
-							}
+							if ($this->type != 'admin') {
+								$name = Database::check_unique_username($this->username, $this->type.'s', 1);
+								$name = $name[$this->type.'_first_name'].' '.$name[$this->type.'_last_name'];
+								if (strtoupper($name) == strtoupper($receivers[0])) {
+									$string .= 'You.';
+								} else {
+									$string .= $receivers[0].'.';
+								}
+							} else {$string .= 'You.';}
 						}
 					}
-					echo '<br>';
-					echo '<b>DATE: </b> '.$date.'.<br>';
-					echo '<b>TITLE OF MAIL: </b> '.$title.'.<br>';
-					echo '<b>MESSAGE: </b> '.$message.'<br>';
-					echo '</div>';
-					echo '</a>';
-					echo '</p>';
+					$string .= '<br>';
+					$string .= '<b>Date: </b> '.$date.'.<br>';
+					$string .= '<b>Title of mail: </b> '.$title.'<br>';
+					$string .= '</div><div class=\'mails_item_message\'>';
+					$string .= '<b>Message: </b>'.evaluateText($message).'</div>';
+					$string .= '</a>';
+					$string .= '</article><hr>';
 				}
 			}
 		} else {
-			if ($this->mode == 'sent') {
-				echo '<h2>YOU HAVE NOT SENT ANY MAILS YET.</h2>';
-			} else if ($this->mode == 'received') {
-				echo '<h2>YOU HAVE NOT RECEIVED ANY MAILS YET.</h2>';
+			if ($this->search) {
+				$string .= '<strong>NO MATCH FOUND.</strong>';
+			} else {
+				if ($this->mode == 'sent') {
+					$string .= '<strong>YOU HAVE NOT SENT ANY MAILS YET.</strong>';
+				} else if ($this->mode == 'received') {
+					$string .= '<strong>YOU HAVE NOT RECEIVED ANY MAILS YET.</strong>';
+				}
 			}
 		}
+		return $string;
 	}
 	private function reset_counter() {
 		$conn = Database::connect_db('admin');
@@ -2054,10 +2157,10 @@ class Mod_Read_Mails {
 		if (!$conn->query($sql)) throw new CustomException(debug_backtrace(), 'UNABLE TO RESET COUNTER');
 		return true;
 	}
-	public function ret_mails() {
+	public function ret_mails(string $new = null) {
 		$this->reset_counter();
 		$mails = $this->retrieve_mail_ids();
-		$this->create_read_links($mails);
+		return $this->create_read_links($mails, $new);
 	}
 }
 //the following classes handle the logics behind promoting(updating) students classes
@@ -2116,9 +2219,32 @@ class Mod_Promote_Students {
 			$session->addAttribute('session', $this->session);
 		}
 		$class_exist = false;
+		$higher_classes = [];
+		if (!preg_match('/SSS 3/', $this->current_class)) {
+			$next_class = [];
+			preg_match('/(\w+) (\d+)(.*)/', $this->current_class, $next_class);
+			if ($next_class[2] + 1 > 3) {
+				$next_class[1] = 'SSS';
+				$next_class[2] = 0;
+			}
+			$next_class = $next_class[1].' '.++$next_class[2];
+			foreach (CLASSES as $key => $value) {
+				if (preg_match('/'.$next_class.'/', $value)) {
+					$higher_classes = array_slice(CLASSES, $key);
+					break;
+				}
+			}
+		}
+		$already_promoted = [];
 		foreach($session->children() as $class) {
+			$already_promoted[] = $class;
 			if ($class == $this->current_class) {
 				$class_exist = true;
+			}
+		}
+		foreach ($higher_classes as $class) {//promotes all higher classes that haven't been already promoted in the case where a lower class is being promoted before other empty higher classes.
+			if (!in_array($class, $already_promoted)) {
+				$session->addChild('class', $class);
 			}
 		}
 		if (!$class_exist) {
@@ -2128,7 +2254,7 @@ class Mod_Promote_Students {
 		if (!file_put_contents($file, $content)) throw new CustomException(debug_backtrace(), 'UNABLE TO PUT CONTENT IN SESSIONS XML FILE');
 		return true;
 	}
-	public function get_promoted_classes($sess) {
+	public static function get_promoted_classes($sess) {
 		$classes = array();
 		$file = '../bin/sessions.xml';
 		$session_exist = false;
@@ -2154,7 +2280,7 @@ class Mod_Promote_Students {
 			} else if ($this->type == 'selected') {
 				echo 'SELECTED STUDENTS FROM '.$this->current_class.' HAVE BEEN PROMOTED TO '.$this->next_class.'.';
 			}
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		}
 	}
 }
@@ -2215,28 +2341,114 @@ class Mod_Graduate_Students extends Mod_Promote_Students{
 		}
 		return true;
 	}
-	private function delete_students() {
-		$conn = Database::connect_db('admin');
+	private function delete_students($db_handle) {
+		$conn = $db_handle;
 		$class = $conn->quote($this->current_class);
 		if ($this->type == 'all') {
-			$sql = 'DELETE t1, t2, t3 FROM students as t1 INNER JOIN students_bio as t2 ON t1.student_id = t2.student_id INNER JOIN mails as t3 ON t1.student_username = t3.username WHERE t1.student_class = '.$class;
+			$sql = 'DELETE t1, t2, t3 FROM students as t1 INNER JOIN students_bio as t2 ON t1.student_id = t2.student_id INNER JOIN mails as t3 ON concat(\'student_\', t1.student_id) = t3.username WHERE t1.student_class = '.$class;
 			if (!$conn->query($sql)) throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE STUDENTS IN '.$this->current_class);
 		} else if ($this->type == 'selected') {
 			foreach ($this->students as $student) {
-				$sql = 'DELETE t1, t2, t3 FROM students as t1 INNER JOIN students_bio as t2 ON t1.student_id = t2.student_id INNER JOIN mails as t3 ON t1.student_username = t3.username WHERE t1.student_id = '.$student;
+				$sql = 'DELETE t1, t2, t3 FROM students as t1 INNER JOIN students_bio as t2 ON t1.student_id = t2.student_id INNER JOIN mails as t3 ON concat(\'student_\', t1.student_id) = t3.username WHERE t1.student_id = '.$student;
 				if (!$conn->query($sql)) throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE STUDENTS IN '.$this->current_class);
 			}
 		}
 		return true;
 	}
+	private function delete_from_subjects($db_handle) {
+		$conn = $db_handle;
+		$subjects = Database::get_all_subjects();
+		foreach ($subjects as $subject) {
+			$subject = str_replace(' ', '_', $subject);
+			if ($this->type == 'all') {
+				$students = Database::check_unique_class_role($this->current_class, 'students', 1);
+				$sql = 'DELETE FROM '.$subject.' WHERE student_id IN (';
+				for ($i = 0; $i < sizeof($students); $i++) { 
+					if ($i == (sizeof($students) - 1)) {
+						$sql .= $students[$i]['student_id'].')';
+					} else {
+						$sql .= $students[$i]['student_id'].',';
+					}
+				}
+				if (!$conn->query($sql)) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE IDS FROM '.$subject);
+				}	
+			} else if ($this->type == 'selected') {
+				foreach ($this->students as $student) {
+					$sql = 'DELETE FROM '.$subject.' WHERE student_id = '.$student;
+					if (!$conn->query($sql)) {
+						throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE '.$student.' FROM '.$subject);
+					}
+				}
+			}
+		}
+		return true;
+	}
+	private function delete_files($db_handle) {
+		$conn = $db_handle;
+		if ($this->type == 'all') {
+			$students = Database::check_unique_class_role($this->current_class, 'students', 1);
+			foreach ($students as $student) {
+				if (!$res = $conn->query('SELECT student_passport FROM students_bio WHERE student_id = '.$student['student_id']))  throw new CustomException(debug_backtrace(), 'UNABLE TO FETCH PASSPORTS FROM DB');
+				$passport = $res->fetch(PDO::FETCH_ASSOC)['student_passport'];
+				if (!unlink($passport)) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE PASSPORT FILE '.$passport);
+				}
+			}
+
+			foreach ($students as $student) {
+				$file = '../bin/xmls/students/'.$student['student_id'].'.xml';
+				if (!unlink($file)) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE XML FILE '.$file);
+				}
+			}
+
+		} else if ($this->type == 'selected') {
+			foreach ($this->students as $student) {
+				if (!$res = $conn->query('SELECT student_passport FROM students_bio WHERE student_id = '.$student))  throw new CustomException(debug_backtrace(), 'UNABLE TO FETCH PASSPORTS FROM DB');
+				$passport = $res->fetch(PDO::FETCH_ASSOC)['student_passport'];
+				if (!unlink($passport)) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE PASSPORT FILE '.$passport);
+				}
+			}
+
+			foreach ($this->students as $student) {
+				$file = '../bin/xmls/students/'.$student.'.xml';
+				if (!unlink($file)) {
+					throw new CustomException(debug_backtrace(), 'UNABLE TO DELETE XML FILE '.$file);
+				}
+			}
+
+		}
+		
+		return true;
+	}
+	private function archive_results() {
+		if ($this->type == 'all') {
+			$students = Database::check_unique_class_role($this->current_class, 'students', 1);
+			$array = [];
+			foreach ($students as $student) {
+				$array[] = $student['student_id'];
+			}
+			$students = $array;
+		} else if ($this->type == 'selected') {
+			$students = $this->students;
+		}
+		if (create_archive($students)) return true;
+	}
 	public function graduate_students() {
 		$students = $this->get_info();
 		$string = $this->create_string($students);
-		if ($this->create_graduate_file($string) && $this->update_sessions_file()) {
-			if ($this->delete_students()) {
-				echo '<p>THE SELECTED STUDENT(S) HAVE BEEN SUCCESSFULLY PASSED OUT OF THE SCHOOL.</p>';
-				echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
-			}
+		$conn = Database::connect_db('admin');
+		if ($this->create_graduate_file($string) && $this->update_sessions_file() && $this->archive_results()) {
+			$conn->beginTransaction();
+			if ($this->delete_files($conn) && $this->delete_from_subjects($conn)) {
+				if ($this->delete_students($conn)) {
+					$conn->commit();
+					echo '<p>THE SELECTED STUDENT(S) HAVE BEEN SUCCESSFULLY PASSED OUT OF THE SCHOOL.</p>';
+					echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
+				} else $conn->rollBack();
+			} else $conn->rollBack();
 		}
 	}
 }
@@ -2317,6 +2529,7 @@ class Mod_Register_Student {
 		if (!$xml = simplexml_load_file($file)) throw new CustomException(debug_backtrace(), 'UNABLE TO OPEN XML FOR STUDENT '.$this->student_id);
 		$session = $xml->sessions->addChild('session');
 		$session->addAttribute('session',$this->session);
+		$session->addAttribute('class', Database::check_unique_id($this->student_id, 'students', 1)['student_class']);
 		foreach ($this->subjects as $subject) {
 			$session->addChild('subject', $subject);
 		}
@@ -2332,7 +2545,7 @@ class Mod_Register_Student {
 			$name = Database::check_unique_id($this->student_id, 'students', 1);
 			$name = $name['student_first_name'].' '.$name['student_last_name'];
 			echo '<p>'.$name .' HAS BEEN SUCCESSFULLY REGISTERED INTO '.$this->orig_class.'.</p>';
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		}
 	}
 }
@@ -2423,6 +2636,7 @@ class Mod_Add_Results {
 	private function execute_statement($pdos) {
 		$status = array();
 		for ($i = 0; $i < sizeof($this->ids); $i++) { 
+			if (empty($this->scores[$i]) && $this->scores[$i] != '0') {$this->scores[$i] = null;}
 			$pdos->bindValue(':score', $this->scores[$i]);
 			$pdos->bindValue(':id', $this->ids[$i]);
 			$pdos->bindValue(':sess', $this->session);
@@ -2439,7 +2653,7 @@ class Mod_Add_Results {
 		$pdos_obj = $this->prep_statement($conn, $sql);
 		if ($this->execute_statement($pdos_obj)) {
 			echo $this->class.' '.$this->res_type.' RESULTS HAVE BEEN SUCCESSFULLY ADDED.';
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		}
 
 	}
@@ -2601,7 +2815,7 @@ class Mod_Publish_Results {
  	public function publish_results() {
  		if ($this->add_publish_element()) {
  			echo '<p>SELECTED RESULTS HAVE BEEN PUBLISHED.</p>';
- 			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+ 			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
  		}
  	}
 }
@@ -2682,6 +2896,14 @@ class Mod_Mark_Attendance {
 	private function create_attendance($presents) {
 		$day = date('M-d-Y');
 		$attendance = '';
+		if ($presents == 'all') {
+			$presents = Database::check_unique_class_role($this->class, 'students', 1);
+			$array = [];
+			foreach ($presents as $present) {
+				array_push($array, $present['student_id']);
+			}
+			$presents = $array;
+		}
 		for ($i = 0; $i < sizeof($presents); $i++) {
 			if ($i == (sizeof($presents) - 1)) {
 				$attendance .= $presents[$i]."\n";
@@ -2704,6 +2926,7 @@ class Mod_Mark_Attendance {
 		}
 		function check_date($date, $file) {
 			$lines = file($file);
+			$status = true;
 			foreach ($lines as $line) {
 				$day = explode('/', $line);
 				$day = $day[0];
@@ -2730,10 +2953,11 @@ class Mod_Mark_Attendance {
 			return true;
 		}
 	}
-	public function calculate_attendance($id, $class, $sess, $term) {
+	public function calculate_attendance($id, $sess, $term) {
 		$attendances = array();
 		$total = 0;
 		$count = 0;
+		$class = XML::get_session_class($id, $sess);
 		$file = self::get_class_file($class, $sess, $term);
 		if (!$lines = file($file)) return false;
 		foreach ($lines as $line) {
@@ -2766,10 +2990,10 @@ class Mod_Mark_Attendance {
 			echo '<p>DATE: '.date('M-d-Y').'</p>';
 			echo '<p>SESSION: '.$this->period['session'].'</p>';
 			echo '<p>TERM: '.$this->period['term'].'</p>';
- 			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		} else {
 			echo '<p>ATTENDANCE FOR TODAY HAS BEEN TAKEN BEFORE.</p>';
- 			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		}
 	}
 }
@@ -2837,7 +3061,7 @@ class Mod_Write_Comments {
 			return true;
 		}
 	}
-	public function get_comments($id, $sess, $term) {
+	public static function get_comments($id, $sess, $term) {
 		$remarks = array();
 		$file = XML::create_file_name($id, 'student');
 		$xml = simplexml_load_file($file);
@@ -2847,6 +3071,7 @@ class Mod_Write_Comments {
 				break;
 			}
 		}
+		if (!isset($session)) return false;
 		if ($term == 'FIRST TERM') {
 			$term = $session->first_term;
 		} else if ($term == 'SECOND TERM') {
@@ -2869,8 +3094,445 @@ class Mod_Write_Comments {
 			echo '<p>COMMENTS HAVE BEEN ADDED FOR THE STUDENTS IN SELECTED CLASS.</p>';
 			echo '<p>SESSION: '.self::$session.'.</p>';
 			echo '<p>TERM: '.self::$term.'.</p>';
-			echo '<p><a href=\'./index.php\'>BACK TO HOMEPAGE.</a></p>';
+			echo '<article class=\'homepage\'><div><a href=\'./index.php\'>GO TO HOMEPAGE</a></div></article>';
 		}
 	}
 }
-?>
+
+//following is a class class
+class Mod_Class {
+	private $class_name;
+	private $conn;
+	public function __construct($class_name) {
+		$this->class_name = $class_name;
+		$this->conn = Database::connect_db('admin');
+	}
+	public function get_class_name() {
+		return $this->class_name;
+	}
+	public function get_class_teacher() {
+		$conn = $this->conn;
+		try {
+			if (!$query = $conn->query('SELECT class_teacher_id FROM classes WHERE class_name = '.$conn->quote($this->class_name))) throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE SQL QUERY');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./class_info.php?'.$_SERVER['QUERY_STRING']);
+			die();
+		}
+		$res = $query->fetch(PDO::FETCH_ASSOC)['class_teacher_id'];
+		if ($res == null) {
+			return false;
+		}
+		$teacher = Database::check_unique_id($res, 'staffs', 1);
+		return ['name' => $teacher['staff_first_name'].' '.$teacher['staff_last_name'], 'id' => $teacher['staff_id']];
+	}
+	public function set_class_teacher(string $id) {
+		// if (empty($id)) {
+		// 	Error_Reg::set_errors('Please select a class teacher.');
+		// }
+		if (sizeof(Error_Reg::$errors) > 0) {
+			Error_Reg::set_err_session();
+			header('location: ./class_info.php?'.$_SERVER['QUERY_STRING']);
+			die();
+		}
+		$conn = $this->conn;
+		$prepared_query = $conn->prepare('UPDATE classes SET class_teacher_id = :id WHERE class_name = '.$conn->quote($this->class_name));
+		if (empty($id)) $id = NULL;
+		$prepared_query->bindValue(':id', $id);
+		try {
+			if (!$result = $prepared_query->execute()) throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE SQL QUERY');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./class_info.php?'.$_SERVER['QUERY_STRING']);
+			die();
+		}
+	}
+	public function get_students() {
+		$conn = $this->conn;
+		if (!$query = $conn->query('SELECT * FROM students WHERE student_class = '.$conn->quote($this->class_name))) throw new CustomExecption(debug_backtrace(), 'UNABLE TO EXECUTE SQL QUERY');
+		$student = $query->fetch(PDO::FETCH_ASSOC);
+		$results = [];
+		while ($student) {
+			array_push($results, ['name' => $student['student_first_name'].' '.$student['student_last_name'], 'id' => $student['student_id']]);
+			$student = $query->fetch(PDO::FETCH_ASSOC);
+		}
+		return $results;
+	}
+	public function student_count() {
+		return count($this->get_students());
+	}
+	public function get_subjects() {
+		$conn = $this->conn;
+		$array = [];
+		if (preg_match('/(jss) (\d)(\w)/i', $this->class_name, $array)) {
+			$this->class_name = $array[1].' '.$array[2];
+		}
+		try {
+			if (!$query = $conn->query('SELECT subject_name FROM subjects WHERE classes LIKE '.$conn->quote('%'.$this->class_name.'%'))) throw new CustomExecption(debug_backtrace(), 'UNABLE TO EXECUTE SQL QUERY');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./class_info.php?'.$_SERVER['QUERY_STRING']);
+			die();
+		}
+		$subject = $query->fetch(PDO::FETCH_ASSOC);
+		$results = [];
+		while ($subject) {
+			$results[] = $subject['subject_name'];
+			$subject = $query->fetch(PDO::FETCH_ASSOC);
+		}
+		return $results;
+	}
+}
+
+// following snippet takes care of school blog
+
+class Mod_Blog_Admin {
+	public function get_writers() {
+		$file = './writers.txt';
+		return array_map('trim', file($file));
+	}
+	public function set_writers(string $username, string $type) {
+		$file = './writers.txt';
+		if (empty($username) || Database::check_unique_username($username, $type.'s')) {
+			Error_Reg::set_errors('User does not exist.');
+			Error_Reg::set_err_session();
+			header('location: ./writers.php');
+			die();
+		}
+		try {
+			$writer = trim($username).','.trim($type);
+			if (!file_put_contents($file, $writer."\n", FILE_APPEND)) throw new CustomException(debug_backtrace(), 'UNABLE TO PUT WRITER IN FILE.');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./writers.php');
+			die();
+		}
+		return true;
+	}
+	public function delete_writers() {
+		$file = './writers.txt';
+		$list = Self::get_writers();
+		function filter_func($e) {
+			list($username, $type) = explode(',', $e);
+			return !in_array($username, $_POST['writers']);
+		} 
+		$new_writers = array_filter($list, 'filter_func');
+		$writers = '';
+		foreach ($new_writers as $writer) {
+			$writers .= $writer."\n";
+		}
+		file_put_contents($file, $writers);
+	}
+	public static function delete_posts(array $array) {
+		$conn = Database::connect_db('admin');
+		$prepared_statement = $conn->prepare('DELETE FROM blog_posts WHERE post_id = :id');
+		$conn->beginTransaction();
+		try {
+			foreach($array as $post) {
+				$prepared_statement->bindValue(':id', $post);
+				$file = $conn->query('SELECT file_type FROM blog_posts WHERE post_id = '.$post)->fetch(PDO::FETCH_ASSOC)['file_type'];
+				if (is_file('./posts/images/'.$post.'.'.trim($file))) {
+					unlink('./posts/images/'.$post.'.'.trim($file));
+				}
+				if (!$prepared_statement->execute()) {
+					$conn->rollBack();
+					throw new CustomException(debug_backtrace(), 'UNABLE TO EXECUTE STATEMENT.');
+				}
+			}
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./writers.php');
+			die();
+		}
+		$conn->commit();
+		return true;
+	}
+}
+
+class Mod_Blogs {
+	private $set;
+	private $search;
+	public function __construct(int $set = null, string $search = null) {
+		$this->offset = $set * 5;
+		$this->search = $search;
+	}
+	public function retrieve_posts($recent = false) {
+		$count = 5;
+		if ($recent) {
+			$this->offset = 0;
+			$count = 15;	
+		} 
+		$conn = Database::connect_db('blog_user');
+		if (!$this->search) {
+			$prepared_statement = $conn->prepare('SELECT post_id, post_title, LEFT(post_content, 300) as subcontent, DATE_FORMAT(post_time, "%d %b, %Y. %h:%i %p") as post_date, file_type FROM blog_posts ORDER BY post_time DESC LIMIT '.$this->offset.', '.$count);
+		} else {
+			$prepared_statement = $conn->prepare('SELECT post_id, post_title, LEFT(post_content, 300) as subcontent, DATE_FORMAT(post_time, "%d %b, %Y. %h:%i %p") as post_date, file_type FROM blog_posts WHERE MATCH (post_content) AGAINST ('.$conn->quote($this->search).') ORDER BY post_time DESC LIMIT '.$this->offset.', '.$count);
+		}
+		try {
+			if (!$prepared_statement->execute()) throw new CustomException(debug_backtrace(), 'UNABLE TO RETRIEVE POSTS.');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./manage_blog.php');
+			die();
+		}
+		return $prepared_statement->fetchAll(PDO::FETCH_ASSOC);
+	}
+	public function count_posts() {
+		$conn = Database::connect_db('blog_user');
+		if (!$this->search) {
+			return $conn->query('SELECT count(post_id) as number FROM blog_posts')->fetch(PDO::FETCH_ASSOC)['number'];
+		} else {
+			return $conn->query('SELECT count(post_id) as number FROM blog_posts WHERE MATCH (post_content) AGAINST ('.$conn->quote($this->search).')')->fetch(PDO::FETCH_ASSOC)['number'];
+		}
+	}
+}
+
+class Mod_Blog {
+	private $data;
+	private $image;
+	public function __construct(array $array = null, $image = null) {
+		if ($array) $this->data = $array;
+		$this->image = $image;
+	}
+	public function create_post() {
+		$conn = Database::connect_db('blog_writer');
+		$prepared_statement = $conn->prepare('INSERT INTO blog_posts SET post_title = :title, post_content = :content, post_time = NOW(), file_type = :image');
+		try {
+			if (!$prepared_statement->execute($this->data)) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE BLOG POST.');
+			$id = $conn->lastInsertId();
+			$image_name = './posts/images/'.$id.'.'.$this->data[':image'];
+			if ($this->image) {
+				if (!move_uploaded_file($this->image, $image_name)) {
+					Mod_Blog_Admin::delete_posts([$id]);
+					throw new CustomException(debug_backtrace(), 'UNABLE TO UPLOAD ARTICLE IMAGE.');
+				}
+			}
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: '.$_SERVER['HTTP_REFERER']);
+			die();
+		}
+		return $id;
+	}
+	public function retrieve_post(int $id) {
+		$conn = Database::connect_db('blog_user');
+		if (!$conn->query('SELECT post_id FROM blog_posts WHERE post_id = '.$conn->quote($id))->fetch(PDO::FETCH_ASSOC)) {
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./index.php');
+			die();
+		}
+		$prepared_statement = $conn->prepare('SELECT post_id, post_title, post_content, DATE_FORMAT(post_time, "%d %b, %Y. %h:%i %p") as post_date, file_type FROM blog_posts WHERE post_id = :id');
+		$prepared_statement->bindValue(':id', $id);
+		try {
+			if (!$prepared_statement->execute()) throw new CustomException(debug_backtrace(), 'UNABLE TO RETRIEVE POST.');
+		} catch (CustomException $e) {
+			handle_exception_obj($e);
+			Error_Reg::set_errors('Something went wrong, please try again.');
+			Error_Reg::set_err_session();
+			header('location: ./index.php');
+			die();
+		}
+		return $prepared_statement->fetch(PDO::FETCH_ASSOC);
+	}
+}
+
+function schoolInfo() {
+	$conn = Database::connect_db('admin');
+	$array = [];
+	$current = new Mod_Change_Session;
+	$current = $current->get_current_info();
+	$array['current_session'] = $current['session'];
+	$array['current_term'] = $current['term'];
+	$start_date = $current['start_date'];
+	$fmt_start_date = new DateTime($start_date);
+	$array['start_date'] = $fmt_start_date->format('d-M-Y');
+	$now = new DateTime();
+	$array['days_open'] = $now->diff($fmt_start_date)->format('%a days open');
+	if ($now < $fmt_start_date) $array['days_open'] = '-'.$array['days_open'];
+	$array['students_count'] = $conn->query('SELECT COUNT(student_id) total FROM students')->fetch(PDO::FETCH_ASSOC)['total'];
+	$array['staff_count'] = $conn->query('SELECT COUNT(staff_id) total FROM staffs')->fetch(PDO::FETCH_ASSOC)['total'];
+	$array['subjects_count'] = $conn->query('SELECT COUNT(subject_name) total FROM subjects')->fetch(PDO::FETCH_ASSOC)['total'];
+	$array['class_count'] = sizeof(CLASSES);
+	return $array;
+}
+
+
+function create_archive(array $students) : bool {
+	function total($array) {
+		$total = 0;
+		foreach($array as $score) {
+			$total = $total + $score;
+		}
+		return $total;
+	}
+	function get_grade($score) {
+		if ($score >= 70) {
+			$grade = 'A';
+		} else if ($score >= 60 && $score < 70) {
+			$grade = 'B';
+		} else if ($score >= 50 && $score < 60) {
+			$grade = 'C';
+		} else if ($score >= 45 && $score < 50) {
+			$grade = 'D';
+		} else if ($score >= 40 && $score < 45) {
+			$grade = 'E';
+		} else if ($score < 40) {
+			$grade = 'F';
+		} else {
+			$grade = '-';
+		}
+		return $grade;
+	}
+	function total_obtained($score_array) {
+		$obtained = 0;
+		foreach ($score_array as $score) {
+			$obtained = $obtained + $score;
+		}
+		return $obtained;
+	}
+	function get_term_percentage($score_array, $no_subjects) {
+		$obtained = total_obtained($score_array);
+		$obtainable = 100 * $no_subjects;
+		$perc = ($obtained / $obtainable) * 100;
+		return $perc;
+	}
+	$terms = ['FIRST TERM', 'SECOND TERM', 'THIRD TERM'];
+	foreach ($students as $student) {
+		$info = Database::check_unique_id($student, 'students', 1);
+		$string = <<<ddd
+		<!doctype html>
+		<html>
+		<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name='viewport' content='width=device-width, initial-scale=.5'>
+		<link rel="stylesheet" href="../archive_style.css">
+		<title>$info[student_first_name] $info[student_last_name] RESULTS ARCHIVE</title>
+	</head>
+	<body>
+ddd;
+		$string .= '<h2>'.$info['student_first_name'].' '.$info['student_last_name'].' RESULTS ARCHIVE</h2>';
+		$string .= '<p>Last class: '.$info['student_class'].'</p>';
+		$sessions = XML::get_sessions_for_student($student);
+		foreach ($sessions as $session) {
+			$string .= '<article class=\'session\'>';
+			$class = XML::get_session_class($student, $session);
+			$string .= '<h3>'.$session.' SESSION ('.$class.')</h3>';
+			foreach ($terms as $term) {
+				$results = new Mod_Check_Student_Result($student, $session, $term);
+				$results = $results->check_student_result();
+				$subjects_scores = array();
+				$string .= '<h4>'.$term.' RESULT</h4>';
+				if ($results) {
+					$string .= '<table class=\'results\'>';
+					$string .= '<thead><tr><th rowspan=\'2\'>S/N</th><th rowspan=\'2\'>SUBJECT</th><th colspan=\'2\'>1ST C.A. TEST</th><th colspan=\'2\'>2ND C.A. TEST</th><th colspan=\'2\'>ASSIGNMENT</th><th colspan=\'2\'>EXAMINATION</th><th colspan=\'2\'>TOTAL</th><th rowspan=\'2\'>GRADE</th></tr>';
+					$string .= '<tr>';
+					for ($i = 0; $i < 5; $i++) { 
+						$string .= '<th>SCORE OBTAINED</th>';
+						$string .= '<th>SCORE OBTAINABLE</th>';
+					}
+					$string .= '</tr></thead>';
+					$index = 1;
+					$string .= '<tbody>';
+					foreach ($results as $result) {
+						$scores = array();
+						$string .= '<tr>';
+						$string .= '<th>'.$index.'.</th>';
+						foreach ($result as $key => $value) {
+							if ($key == 'subject') {
+								$string .= '<th>'.strtoupper($value).'</th>';
+							} else {
+								if (preg_match('/ca/i', $key)) {
+									$obtainable = 15;
+								} else if (preg_match('/ass/i', $key)) {
+									$obtainable = 10;
+								} else if (preg_match('/exam/i', $key)) {
+									$obtainable = 60;
+								}
+								$scores[] = $value;
+								$string .= $value != null ? '<td>'.$value.'</td>' : '<td>-</td>';
+								$string .= '<td>'.$obtainable.'</td>';
+							}
+						}
+						$total = total($scores);
+						$subjects_scores[] = $total;
+						$string .= '<td>'.$total.'</td>';
+						$string .= '<td>100</td>';
+						$string .= '<td>'.get_grade($total).'</td>';
+						$string .= '</tr>';
+						$index++;
+					}
+					$string .= '</tbody></table>';
+					$string .= '<article class=\'student_performance_data field_set\'>';
+					$total_score_obtained = total_obtained($subjects_scores);
+					$string .= '<div class=\'s_ed\'>Total score obtained: '.$total_score_obtained.'</div>';
+					$total_score_obtainable = sizeof($results) * 100;
+					$string .= '<div class=\'s_able\'>Total score obtainable: '.$total_score_obtainable.'</div>';
+					$percentage = get_term_percentage($subjects_scores, sizeof($results));
+					$string .= '<div class=\'s_tage\'>Score percentage: '.round($percentage, 2).'%</div>';
+					$string .= '</article>';
+				} else $string .= '<p>NO RESULTS.</p>';
+			}
+			$string .= '</article>';
+		}
+		$string .= '</body><html>';
+		$current_session = new Mod_Change_Session();
+		$current_session = $current_session->get_current_info()['session'];
+		$current_session = preg_replace('/\//', '_', $current_session);
+		if (!is_dir('../results_archive/'.$current_session.'/')) {
+			mkdir('../results_archive/'.$current_session.'/');
+		}
+		$dir_name = '../results_archive/'.$current_session.'/';
+		$file_name = $dir_name.strtolower($info['student_first_name']).'_'.strtolower($info['student_last_name']).'_'.strtolower($info['student_id']).'.html';
+		if (!file_put_contents($file_name, $string)) throw new CustomException(debug_backtrace(), 'UNABLE TO CREATE ARCHIVE FILE FOR '.$info['student_id']);
+	}
+	return true;
+}
+
+function deregister($id) {
+	// delete current session element from xml file
+	$file = '../bin/xmls/students/'.$id.'.xml';
+	$doc = new DOMDocument();
+	$doc->load($file);
+	$session = new Mod_Change_Session();
+	$cur_session = $session->get_current_info()['session'];
+	$sessions = $doc->getElementsByTagName('session');
+	$subjects = false;
+	foreach($sessions as $session) {
+		if ($session->getAttribute('session') == $cur_session) {
+			$subjects = $session->getElementsByTagName('subject');
+			$doc->getElementsByTagName('sessions')[0]->removeChild($session);
+		}
+	}
+	if (!file_put_contents($file, $doc->saveXml())) throw new CustomException(debug_backtrace(), 'UNABLE TO REMOVE SESSION FROM XML FILE '.$file);
+
+	// delete student from all registered subjects
+	if ($subjects) {
+		$conn = Database::connect_db('admin');
+		$session = new Mod_Change_Session();
+		$cur_session = $session->get_current_info()['session'];
+		foreach ($subjects as $subject) {
+			$subject = strtolower(trim(str_replace(' ', '_', $subject->textContent)));
+			$sql = 'DELETE FROM '.$subject.' WHERE student_id = '.$id.' AND session = '.$conn->quote($cur_session);
+			if (!$conn->query($sql)) throw new CustomException(debug_backtrace(), 'UNABLE TO REMOVE SESSION FROM XML FILE '.$file);
+		}
+	}
+	
+	// returns true if nothing went wrong
+	return true;
+}

@@ -1,0 +1,15 @@
+body {min-width: fit-content;}
+
+h3, h4 {text-align: center;}
+footer, main {width: 100%; margin-left: 0;}
+table.sessions {max-width: 900px; margin: auto;}
+td {padding: .5em 0;}
+
+
+article.session {margin-bottom: 7em;}
+article.student_performance_data {margin-top: 1em;}
+article.student_performance_data div {margin-top: .5em;}
+table.results {border-collapse: collapse; font-size: .8em;}
+table.results, table.results td, table.results th {
+    border: 1px solid brown;
+}

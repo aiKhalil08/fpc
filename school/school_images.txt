@@ -1,0 +1,6 @@
+image1.jpeg,a section of the school classrooms
+image2.jpeg,the school laboratory
+image3.jpeg,the school library
+image4.jpeg,the school sport ground
+image5.jpeg,the school ict center
+image6.jpeg,the school transport vehicles

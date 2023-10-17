@@ -2,10 +2,10 @@
 //the following classes handle displaying student info and bio
 class View {
 	public static function show_pic($src, $alt, $id = false, $class = false) {
-		return '<img src='.$src.' alt='.$alt.' id='.$id.' class='.$class.' />';
+		return '<img src=\''.$src.'\' alt=\''.$alt.'\' id=\''.$id.'\' class=\'passports\'>';
 	}
 	public static function back_to_homepage() {
-		echo '<p><a href=\'./index.php\'>BACK TO HOME PAGE</a></p>';
+		echo '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
 	}
 }
 class Display_Student_Bio {//instantiated in student_bio.php
@@ -89,7 +89,7 @@ class Display_Student_Bio {//instantiated in student_bio.php
 		}
 	}
 }
-class Display_St {//instantiated in students_regx.php
+class Display_St {//instantiated in students_regx.php *****
 	private $result;
 	private $type;
 	public function __construct($array, $type) {
@@ -97,37 +97,39 @@ class Display_St {//instantiated in students_regx.php
 		$this->type = $type;
 	}
 	public function display() {
+		$string = '';
 		if ($this->type == 'student') {
 			$first_name = $this->result[0]['student_first_name'];
 			$last_name = $this->result[0]['student_last_name'];
 			$username = $this->result[0]['student_username'];
 			$class = $this->result[0]['student_class'];
 			$passport_src = $this->result[0]['student_passport'];
-			echo View::show_pic($passport_src, $first_name);
-			echo '<div>';
-			echo '<span><b>STUDENT\'S BASIC INFO</b></span>';
-			echo '<p><b>STUDENT\'S FIRST NAME:</b> '.$first_name.'.</p>';
-			echo '<p><b>STUDENT\'S LAST NAME:</b> '.$last_name.'.</p>';
-			echo '<p><b>STUDENT\'S USERNAME:</b> '.$username.'.</p>';
-			echo '<p><b>STUDENT\'S CLASS:</b> '.$class.'.</p>';
-			echo '</div>';
-			echo '</div>';
+			$string .= View::show_pic($passport_src, $first_name);
+			$string .= '<section class=\'basic_info field_set\'>';
+			$string .= '<span class=\'legend\'>Students basic info </span>';
+			$string .= '<p><b>STUDENT\'S FIRST NAME:</b> '.$first_name.'.</p>';
+			$string .= '<p><b>STUDENT\'S LAST NAME:</b> '.$last_name.'.</p>';
+			$string .= '<p><b>STUDENT\'S USERNAME:</b> '.$username.'.</p>';
+			$string .= '<p><b>STUDENT\'S CLASS:</b> '.$class.'.</p>';
+			$string .= '</div>';
+			$string .= '</div>';
 		} else if ($this->type == 'staff') {
 			$first_name = $this->result[0]['staff_first_name'];
 			$last_name = $this->result[0]['staff_last_name'];
 			$username = $this->result[0]['staff_username'];
 			$class = $this->result[0]['staff_class'];
 			$passport_src = $this->result[0]['staff_passport'];
-			echo View::show_pic($passport_src, $first_name);
-			echo '<div>';
-			echo '<span><b>STAFF\'S BASIC INFO</b></span>';
-			echo '<p><b>STAFF\'S FIRST NAME:</b> '.$first_name.'.</p>';
-			echo '<p><b>STAFF\'S LAST NAME:</b> '.$last_name.'.</p>';
-			echo '<p><b>STAFF\'S USERNAME:</b> '.$username.'.</p>';
-			echo '<p><b>STAFF\'S CLASS:</b> '.$class.'.</p>';
-			echo '</div>';
-			echo '</div>';
+			$string .= View::show_pic($passport_src, $first_name);
+			$string .= '<div>';
+			$string .= '<span><b>STAFF\'S BASIC INFO</b></span>';
+			$string .= '<p><b>STAFF\'S FIRST NAME:</b> '.$first_name.'.</p>';
+			$string .= '<p><b>STAFF\'S LAST NAME:</b> '.$last_name.'.</p>';
+			$string .= '<p><b>STAFF\'S USERNAME:</b> '.$username.'.</p>';
+			$string .= '<p><b>STAFF\'S CLASS:</b> '.$class.'.</p>';
+			$string .= '</div>';
+			$string .= '</div>';
 		}
+		return $string;
 	}
 }
 class Display_All_St {//instantiated in allstudents.php and allstaffs.php and search_st.php
@@ -138,56 +140,62 @@ class Display_All_St {//instantiated in allstudents.php and allstaffs.php and se
 		$this->type = $type;
 	}
 	public function create_view() {
+		$string = '';
 		if (sizeof($this->result_set) == 0) {
-			echo '<h1>DATA DOES NOT EXIST!</h1>';
-			View::back_to_homepage();
+			$string .= '<strong>DATA DOES NOT EXIST!</strong>';
+			return $string;
 			die();
 		}
 		if ($this->type == 'student') {
-			echo '<table id=\'\'>';
-			echo '<tr>';
-			echo '<th>STUDENT\'S PICTURE</th>';
-			echo '<th>STUDENT\'S NAME</th>';
-			echo '<th>STUDENT\'S USERNAME</th>';
-			echo '<th>STUDENT\'S CLASS</th>';
-			echo '<th>VIEW BIO</th>';
-			echo '<th>EDIT STUDENT</th>';
-			echo '</tr>';
+			$string .= '<table id=\'\'>';
+			$string .= '<tr>';
+			$string .= '<th>S/N</th>';
+			$string .= '<th>STUDENT\'S PICTURE</th>';
+			$string .= '<th>STUDENT\'S NAME</th>';
+			$string .= '<th>STUDENT\'S USERNAME</th>';
+			$string .= '<th>STUDENT\'S CLASS</th>';
+			$string .= '<th>VIEW BIO</th>';
+			$string .= '<th>EDIT STUDENT</th>';
+			$string .= '</tr>';
+			$index = 1;
 			foreach ($this->result_set as $student) {
-				echo '<tr>';
-				echo '<td>'.View::show_pic($student['student_passport'], $student['student_first_name']).'</td>';
-				echo '<td>'.$student['student_first_name'].' '.$student['student_last_name'].'</td>';
-				echo '<td>'.$student['student_username'].'</td>';
-				echo '<td>'.$student['student_class'].'</td>';
-				echo '<td><a href=\'./student_bio.php?id='.$student['student_id'].'\'>VIEW BIO</a></td>';
-				echo '<td><a href=\'./addstudent.php?id='.$student['student_id'].'\'>EDIT INFO</a></td>';
-				echo '</tr>';
+				$string .= '<tr>';
+				$string .= '<td>'.$index++.'.</td>';
+				$string .= '<td>'.View::show_pic($student['student_passport'], $student['student_first_name']).'</td>';
+				$string .= '<td>'.$student['student_first_name'].' '.$student['student_last_name'].'</td>';
+				$string .= '<td>'.$student['student_username'].'</td>';
+				$string .= '<td>'.$student['student_class'].'</td>';
+				$string .= '<td><a href=\'./student_bio.php?id='.$student['student_id'].'\'>VIEW BIO</a></td>';
+				$string .= '<td><a href=\'./addstudent.php?id='.$student['student_id'].'\'>EDIT INFO</a></td>';
+				$string .= '</tr>';
 			}
-			echo '</table>';
-			View::back_to_homepage();
+			$string .= '</table>';
 		} else if ($this->type == 'staff') {
-			echo '<table id=\'\'>';
-			echo '<tr>';
-			echo '<th>STAFF\'S PICTURE</th>';
-			echo '<th>STAFF\'S NAME</th>';
-			echo '<th>STAFF\'S USERNAME</th>';
-			echo '<th>STAFF\'S ROLE</th>';
-			echo '<th>VIEW BIO</th>';
-			echo '<th>EDIT STAFF</th>';
-			echo '</tr>';
+			$string .= '<table id=\'\'>';
+			$string .= '<tr>';
+			$string .= '<th>S/N</th>';
+			$string .= '<th>STAFF\'S PICTURE</th>';
+			$string .= '<th>STAFF\'S NAME</th>';
+			$string .= '<th>STAFF\'S USERNAME</th>';
+			$string .= '<th>STAFF\'S ROLE</th>';
+			$string .= '<th>VIEW BIO</th>';
+			$string .= '<th>EDIT STAFF</th>';
+			$string .= '</tr>';
+			$index = 1;
 			foreach ($this->result_set as $staff) {
-				echo '<tr>';
-				echo '<td>'.View::show_pic($staff['staff_passport'], $staff['staff_first_name']).'</td>';
-				echo '<td>'.$staff['staff_first_name'].' '.$staff['staff_last_name'].'</td>';
-				echo '<td>'.$staff['staff_username'].'</td>';
-				echo '<td>'.$staff['staff_role'].'</td>';
-				echo '<td><a href=\'./staff_bio.php?id='.$staff['staff_id'].'\'>VIEW BIO</a></td>';
-				echo '<td><a href=\'./addstaff.php?id='.$staff['staff_id'].'\'>EDIT INFO</a></td>';
-				echo '</tr>';
+				$string .= '<tr>';
+				$string .= '<td>'.$index++.'.</td>';
+				$string .= '<td>'.View::show_pic($staff['staff_passport'], $staff['staff_first_name']).'</td>';
+				$string .= '<td>'.$staff['staff_first_name'].' '.$staff['staff_last_name'].'</td>';
+				$string .= '<td>'.$staff['staff_username'].'</td>';
+				$string .= '<td>'.$staff['staff_role'].'</td>';
+				$string .= '<td><a href=\'./staff_bio.php?id='.$staff['staff_id'].'\'>VIEW BIO</a></td>';
+				$string .= '<td><a href=\'./addstaff.php?id='.$staff['staff_id'].'\'>EDIT INFO</a></td>';
+				$string .= '</tr>';
 			}
-			echo '</table>';
-			View::back_to_homepage();
+			$string .= '</table>';
 		}
+		return $string;
 	}
 }
 class Proceed_Delete {//instantiated in delete_st.php
@@ -206,27 +214,28 @@ class Proceed_Delete {//instantiated in delete_st.php
 				$ln = 'student_last_name';
 				$cl = 'student_class';
 				$type = 'STUDENT';
-				$form = '<form method=\'post\' action=\'delete_st.php?type=nt\'>';
+				$method = 'nt';
 				break;
 			case 'staff':
 				$type = 'STAFF';
 				$fn = 'staff_first_name';
 				$ln = 'staff_last_name';
 				$cl = 'staff_role';
-				$form = '<form method=\'post\' action=\'delete_st.php?type=fa\'>';
+				$method = 'fa';
 				break;
 		}
-		$form .= '<p>ARE YOU SURE YOU WANT TO DELETE THE FOLLOWING '.$type.'(S)?</p>';
+		$form = '<p>Are you sure you want to delete the following '.strtolower($this->type).'(s)?</p><ul>';
 		if (strpos($this->input, ',')) {
 			foreach ($this->list as $value) {
-				$form .= '<p>'.$value[$fn].' '.$value[$ln].' IN '.$value[$cl].'</p>';
+				$form .= '<li>'.$value[$fn].' '.$value[$ln].' IN '.$value[$cl].'</li>';
 			}
 		} else {
-			$form .= '<p>'.$this->list[$fn].' '.$this->list[$ln].' IN '.$this->list[$cl].'</p>';
+			$form .= '<li>'.$this->list[$fn].' '.$this->list[$ln].' IN '.$this->list[$cl].'</li>';
 		}
-		$form .= '<p><strong>BE INFORMED THAT ALL DATA PERTAINING TO THE LISTED '.strtoupper($this->type).'(S) WILL BE DELETED AND CANNOT BE REVERSED.</strong></p>';
-		$form .= '<p><input type=\'hidden\' name=\'input\' value=\''.$this->input.'\' /></p>';
-		$form .= '<p><input type=\'submit\' name=\'delete\' value=\'DELETE\' /></p>';
+		$form .= '</ul><p><strong>BE INFORMED THAT ALL DATA PERTAINING TO THE LISTED '.strtoupper($this->type).'(S) WILL BE DELETED AND CANNOT BE REVERSED.</strong></p>';
+		$form .= '<form method=\'post\' action=\'delete_st.php?type='.$method.'\'>';
+		$form .= '<p><input type=\'hidden\' name=\'usernames\' value=\''.$this->input.'\' /></p>';
+		$form .= '<p><input type=\'submit\' name=\'proceed\' id=\'delete\' value=\'DELETE\' /></p>';
 		$form .= '</form>';
 		echo $form;
 	}
@@ -269,19 +278,15 @@ class Read_Mails {
 		} else if ($_GET['mode'] == 'ed') {
 			$this->mode = 'received';
 		}
-		self::$type = base64_decode($type);
-		$this->username = base64_decode($username);
+		self::$type = $type;
+		$this->username = $username;
 	}
 	public function read_xml() {
 		$file = '../bin/mails/'.self::$id.'.xml';
 		$xml = simplexml_load_file($file);
 		$receivers = array();
 		$appendages = array();
-		if ($xml->sender == $this->username) {
-			$sender = 'YOU';
-		} else {
-			$sender = $xml->sender;
-		}
+		$sender = $xml->sender;
 		foreach ($xml->receipients->children() as $name) {
 			$receivers[] = $name;
 		}
@@ -293,50 +298,51 @@ class Read_Mails {
 				$appendages[] = $appendage;
 			}
 		}
-		echo '<div>';
-		echo '<p><b>FROM:</b> '.$sender.'.</p><br>';
-		echo '<p><b>TO:</b> ';
+		$string = '';
+		$string .= '<div id=\'mail_info\'><p><b>Title of mail: </b> '.$title.'</p>';
+		$string .= '<p><b>From:</b> '.$sender.'.</p>';
+		$string .= '<p><b>To:</b> ';
 		if ($this->mode == 'sent') {
 			for ($i = 0; $i < sizeof($receivers); $i++) {
-				if ($i == 2) {
-					echo 'and others...';
-					break;
+				if ($i == (sizeof($receivers) - 1)) {
+					$string .= $receivers[$i].'.';
 				} else {
-					if ($i == (sizeof($receivers) - 1)) {
-						echo $receivers[$i].'.';
-					} else {
-						echo $receivers[$i].', ';
-					}
+					$string .= $receivers[$i].', ';
 				}
 			}
 		} else if ($this->mode == 'received') {
+			if (self::$type != 'admin') {
+				$name = Database::check_unique_username($this->username, self::$type.'s', 1);
+				$name = $name[self::$type.'_first_name'].' '.$name[self::$type.'_last_name'];
+			} else {$name = 'ADMIN';}
 			if (sizeof($receivers) > 1) {
-				echo 'YOU AND OTHERS.';
+				$string .= $name.' and others.';
 			} else {
-				echo 'YOU.';
+				$string .= $name.'.';
 			}
 		}
-		echo '</p><br>';
-		echo '<p><b>DATE: </b> '.$date.'.</p><br>';
-		echo '<p><b>TITLE OF MAIL: </b> '.$title.'</p><br>';
-		echo '<p><b>MESSAGE: </b> '.$message.'</p><br>';
+		$string .= '</p>';
+		$string .= '<p><b>Date: </b> '.$date.'.</p></div>';
+		$string .= '<div id=\'mail_message\'><p><b>Message: </b> '.evaluateText($message).'</p></div>';
+		$string .= '<div id=\'mail_appendages\'><p><b>Appendages: </b>';
 		if ($appendages) {
-			echo '<p><b>APPENDAGES: </b>';
+			
 			foreach ($appendages as $appendage) {
-				if ($appendage['type'] == 'png' || $appendage['type'] == 'jpeg' || $appendage['type'] == 'gif') {
-					$link= 'DOWNLOAD IMAGE';
+				if ($appendage['type'] == 'png' || $appendage['type'] == 'jpeg' || $appendage['type'] == 'jpg' || $appendage['type'] == 'gif') {
+					$link= '<span class=\'download_appendage_icon\'>image</span>';
 				} else if ($appendage['type'] == 'mp3') {
-					$link= 'DOWNLOAD AUDIO';
+					$link= '<span class=\'download_appendage_icon\'>audio</span>';
 				} else if ($appendage['type'] == 'mp4' || $appendage['type'] == 'mkv') {
-					$link= 'DOWNLOAD VIDEO';
+					$link= '<span class=\'download_appendage_icon\'>video</span>';
 				} else {
-					$link= 'DOWNLOAD FILE';
+					$link= '<span class=\'download_appendage_icon\'>file</span>';
 				}
-				echo '<span><a href=\'./download_appendage.php?id='.$appendage.'&type='.$appendage['type'].'\'>'.$link.'</a></span> ';
+				$string .= '<span><a class=\'download_appendage_link\' href=\'./download_appendage.php?id='.$appendage.'&type='.$appendage['type'].'\'>'.$link.'</a></span> ';
 			}
-			echo '</p>';
+			
 		}
-		echo '</div>';
+		$string .= '</p></div>';
+		return $string;
 	}
 }
 class Dec_Students_Reg {
@@ -345,22 +351,24 @@ class Dec_Students_Reg {
 		$this->students = $studs;
 	}
 	public function dec_form() {
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>CLASS STUDENTS</th><th>REGISTER</th></tr>';
+		$string = '';
+		$string .= '<table>';
+		$string .= '<tr><th>S/N</th><th>CLASS STUDENTS</th><th>REGISTER</th></tr>';
 		$index = 1;
 		foreach ($this->students as $student) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
-			echo '<td>'.$student['student']['student_first_name'].' '.$student['student']['student_last_name'].'</td>';
+			$string .= '<tr>';
+			$string .= '<td>'.$index.'.</td>';
+			$string .= '<td>'.$student['student']['student_first_name'].' '.$student['student']['student_last_name'].'</td>';
 			if ($student['status'] == 'no_reg') {
-				echo '<td><a href=\'./students_regx.php?id='.base64_encode($student['student']['student_id']).'&cl='.base64_encode($student['student']['student_class']).'\'>register...</a></td>';
+				$string .= '<td><a href=\'./student_registration.php?id='.base64_encode($student['student']['student_id']).'&cl='.base64_encode($student['student']['student_class']).'\'>register...</a></td>';
 			} else {
-				echo '<td>REGISTERED</td>';
+				$string .= '<td>REGISTERED</td>';
 			}
-			echo '</tr>';
+			$string .= '</tr>';
 			$index++;
 		}
-		echo '</table>';
+		$string .= '</table>';
+		return $string;
 	}
 }
 class Dec_Registration {
@@ -375,25 +383,28 @@ class Dec_Registration {
 		$this->subjects = $subs;
 	}
 	public function dec_form() {
-		echo '<form method=\'post\' action=\'./registration.php\'>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>SUBJECT</th><th>TICK</th><th>SUBJECT TEACHER</th><tr>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'./student_registration.php\'>';
+		$string .= '<table>';
+		$string .= '<tr><th>S/N</th><th>SUBJECT</th><th>TICK</th><th>SUBJECT TEACHER</th><tr>';
 		$index = 1;
+		$string .= '<tr><td>-</td><td>SELECT ALL</td><td><input type=\'checkbox\' name=\'mark_all\' value=\'all\' /></td><td>-</td></tr>';
 		foreach ($this->subjects as $subject) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
-			echo '<td>'.strtoupper($subject['subject']).'</td>';
-			echo '<td><input type=\'checkbox\' name=\'subjects[]\' value=\''.$subject['subject'].'\' /></td>';
-			echo '<td>'.$subject['teacher_name'].'</td>';
-			echo '</tr>';
+			$string .= '<tr>';
+			$string .= '<td>'.$index.'.</td>';
+			$string .= '<td>'.strtoupper($subject['subject']).'</td>';
+			$string .= '<td><input type=\'checkbox\' name=\'subjects[]\' value=\''.$subject['subject'].'\' /></td>';
+			$string .= '<td>'.$subject['teacher_name'].'</td>';
+			$string .= '</tr>';
 			$index++;
 		}
-		echo '<input type=\'hidden\' name=\'student_id\' value=\''.$this->student_id.'\' />';
-		echo '<input type=\'hidden\' name=\'student_class\' value=\''.$this->student_class.'\' />';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$this->session.'\' />';
-		echo '<tr><td colspan=\'4\'><input type=\'submit\' name=\'reg_sub\' value=\'REGISTER STUDENT\' /></td></tr>';
-		echo '</table>';
-		echo '</form>';
+		$string .= '<input type=\'hidden\' name=\'student_id\' value=\''.$this->student_id.'\' />';
+		$string .= '<input type=\'hidden\' name=\'student_class\' value=\''.$this->student_class.'\' />';
+		$string .= '<input type=\'hidden\' name=\'session\' value=\''.$this->session.'\' />';
+		$string .= '<tr><td colspan=\'4\'><input type=\'submit\' name=\'reg_sub\' value=\'Register student\' /></td></tr>';
+		$string .= '</table>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Input_Results {
@@ -419,37 +430,39 @@ class Dec_Input_Results {
 		} else if ($this->result_type == 'EXAMINATION') {
 			$obtainable = 60;
 		}
-		echo '<p>SUBJECT: '.$this->subject.'</p>';
-		echo '<p>CLASS: '.$this->class.'</p>';
-		echo '<p>SESSION: '.$this->session.'</p>';
-		echo '<p>TERM: '.$this->term.'</p>';
-		echo '<p>RESULT TYPE: '.$this->result_type.'</p>';
-		echo '<form method=\'post\' action=\'./addresultsx.php\'>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>STUDENT\'S NAME</th><th>SCORE OBTAINED</th><th>SCORE OBTAINABLE</th></tr>';
+		$string = '';
+		$string .= '<p>Subject: '.$this->subject.'</p>';
+		$string .= '<p>Class: '.$this->class.'</p>';
+		$string .= '<p>Session: '.$this->session.'</p>';
+		$string .= '<p>Term: '.$this->term.'</p>';
+		$string .= '<p>Result type: '.$this->result_type.'</p>';
+		$string .= '<form method=\'post\' action=\'./addresults.php\'>';
+		$string .= '<table>';
+		$string .= '<tr><th>S/N</th><th>STUDENT\'S NAME</th><th>SCORE OBTAINED</th><th>SCORE OBTAINABLE</th></tr>';
 		for ($i = 0; $i < sizeof($this->students); $i++) {
-			echo '<tr>';
-			echo '<td>'.($i + 1).'</td>';
+			$string .= '<tr>';
+			$string .= '<td>'.($i + 1).'.</td>';
 			foreach ($this->students[$i] as $key => $value) {
 				if ($key == 'name') {
-					echo '<td>'.$value.'</td>';
+					$string .= '<td>'.$value.'</td>';
 				} else if ($key == 'student_id') {
-					echo '<td><input type=\'hidden\' name=\'id[]\' value=\''.$value.'\' />';
+					$string .= '<td><input type=\'hidden\' name=\'id[]\' value=\''.$value.'\' />';
 				} else {
-					echo '<input type=\'text\' name=\'score[]\' value=\''.$value.'\' /></td>';
+					$string .= '<input type=\'number\' max=\''.$obtainable.'\' name=\'score[]\' value=\''.$value.'\' /></td>';
 				}
 			}
-			echo '<td>'.$obtainable.'</td>';
-			echo '</tr>';
+			$string .= '<td>'.$obtainable.'</td>';
+			$string .= '</tr>';
 		}
-		echo '<input type=\'hidden\' name=\'subject\' value=\''.$this->subject.'\' />';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\' />';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$this->session.'\' />';
-		echo '<input type=\'hidden\' name=\'term\' value=\''.$this->term.'\' />';
-		echo '<input type=\'hidden\' name=\'res_type\' value=\''.$this->result_type.'\' />';
-		echo '<tr><td colspan=\'4\'><input type=\'submit\' name=\'add_results_sub\' value=\'ADD RESULTS\' /></td></tr>';
-		echo '</table>';
-		echo '</form>';
+		$string .= '<input type=\'hidden\' name=\'subject\' value=\''.$this->subject.'\' />';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\' />';
+		$string .= '<input type=\'hidden\' name=\'session\' value=\''.$this->session.'\' />';
+		$string .= '<input type=\'hidden\' name=\'term\' value=\''.$this->term.'\' />';
+		$string .= '<input type=\'hidden\' name=\'res_type\' value=\''.$this->result_type.'\' />';
+		$string .= '<tr><td colspan=\'4\'><input type=\'submit\' name=\'add_results_sub\' value=\'Add results\' /></td></tr>';
+		$string .= '</table>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Show_Spreadsheet {
@@ -493,26 +506,33 @@ class Show_Spreadsheet {
 			}
 			return $grade;
 		}
-		echo '<p>SUBJECT: '.strtoupper($this->subject).'</p>';
-		echo '<p>CLASS: '.$this->class.'</p>';
-		echo '<p>SESSION: '.$this->session.'</p>';
-		echo '<p>TERM: '.$this->term.'</p>';
-		echo '<table>';
-		echo '<tr><th rowspan=\'2\'>S/N</th><th rowspan=\'2\'>STUDENT\'S NAME</th><th colspan=\'2\'>1ST C.A. TEST</th><th colspan=\'2\'>2ND C.A. TEST</th><th colspan=\'2\'>ASSIGNMENT</th><th colspan=\'2\'>EXAMINATION</th><th colspan=\'2\'>TOTAL</th><th rowspan=\'2\'>GRADE</th></tr>';
-		echo '<tr>';
+		
+		$string = '';
+		$string .= '<p>Subject: '.strtoupper($this->subject).'</p>';
+		$string .= '<p>Class: '.$this->class.'</p>';
+		$string .= '<p>Session: '.$this->session.'</p>';
+		$string .= '<p>Term: '.$this->term.'</p>';
+		$string .= '<span class=\'toggle_result_view\'>full view</span>';
+		$string .= '<article class=\'results_table\'>';
+		$string .= '<table class=\'sticky_parts\'>';
+		$string .= '<thead>';
+		$string .= '<tr><th rowspan=\'2\' class=\'top_sticky left_sticky\' >S/N</th><th rowspan=\'2\' class=\'top_sticky left_sticky\'>STUDENT\'S NAME</th><th colspan=\'2\' class=\'top_sticky\' id=\'top1\'>1ST C.A. TEST</th><th colspan=\'2\' class=\'top_sticky\'>2ND C.A. TEST</th><th colspan=\'2\' class=\'top_sticky\'>ASSIGNMENT</th><th colspan=\'2\' class=\'top_sticky\'>EXAMINATION</th><th colspan=\'2\' class=\'top_sticky\'>TOTAL</th><th rowspan=\'2\' class=\'top_sticky\'>GRADE</th></tr>';
+		$string .= '<tr>';
 		for ($i = 0; $i < 5; $i++) { 
-			echo '<th>SCORE OBTAINED</th>';
-			echo '<th>SCORE OBTAINABLE</th>';
+			$string .= '<th id=\'top2\' class=\'top_sticky\'>SCORE OBTAINED</th>';
+			$string .= '<th class=\'top_sticky\'>SCORE OBTAINABLE</th>';
 		}
-		echo '</tr>';
+		$string .= '</tr>';
+		$string .= '</thead>';
 		$index = 1;
+		$string .= '<tbody>';
 		foreach ($this->results as $result) {
 			$scores = array();
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
+			$string .= '<tr>';
+			$string .= '<th class=\'left_sticky\' id=\'left1\'>'.$index.'.</th>';
 			foreach ($result as $key => $value) {
 				if ($key == 'name') {
-					echo '<td>'.$value.'</td>';
+					$string .= '<th class=\'left_sticky\' id=\'left2\'>'.$value.'</th>';
 				} else if ($key != 'student_id') {
 					if (preg_match('/ca/i', $key)) {
 						$obtainable = 15;
@@ -522,19 +542,22 @@ class Show_Spreadsheet {
 						$obtainable = 60;
 					}
 					$scores[] = $value;
-					echo $value != null ? '<td>'.$value.'</td>' : '<td>-</td>';
-					echo '<td>'.$obtainable.'</td>';
+					$string .= $value != null ? '<td>'.$value.'</td>' : '<td>-</td>';
+					$string .= '<td>'.$obtainable.'</td>';
 				}
 			}
 			$total = total($scores);
-			echo '<td>'.$total.'</td>';
-			echo '<td>100</td>';
-			echo '<td>'.get_grade($total).'</td>';
-			echo '</tr>';
+			$string .= '<td>'.$total.'</td>';
+			$string .= '<td>100</td>';
+			$string .= '<td>'.get_grade($total).'</td>';
+			$string .= '</tr>';
 			$index++;
 		}
-		echo '</table>';
-		echo View::back_to_homepage();
+		$string .= '</tbody>';
+		$string .= '</table>';
+		$string .= '</article>';
+		$string .= '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
+		return $string;
 	}
 }
 class Show_Student_Result {
@@ -545,8 +568,9 @@ class Show_Student_Result {
 	private $class;
 	private $session;
 	private $term;
+	private $gender;
 	private $passport;
-	public function __construct($res, $attend, $comms, $name, $class, $sess, $term, $passport) {
+	public function __construct($res, $attend, $comms, $name, $class, $sess, $term, $gender, $passport) {
 		$this->results = $res;
 		$this->attendance = $attend;
 		$this->comments = $comms;
@@ -554,9 +578,11 @@ class Show_Student_Result {
 		$this->class = $class;
 		$this->session = $sess;
 		$this->term = $term;
+		$this->gender = $gender;
 		$this->passport = $passport;
 	}
 	public function show() {
+		$string = '';
 		$subjects_scores = array();
 		function total($array) {
 			$total = 0;
@@ -596,28 +622,36 @@ class Show_Student_Result {
 			$perc = ($obtained / $obtainable) * 100;
 			return $perc;
 		}
-		echo '<p>'.View::show_pic($this->passport, strtolower($this->name)).'</p>';
-		echo '<p>STUDENT\'S NAME: '.strtoupper($this->name).'</p>';
-		echo '<p>CLASS: '.$this->class.'</p>';
-		echo '<p>SESSION: '.$this->session.'</p>';
-		echo '<p>TERM: '.$this->term.'</p>';
-		echo '<table>';
-		echo '<tr><th rowspan=\'2\'>S/N</th><th rowspan=\'2\'>SUBJECT</th><th colspan=\'2\'>1ST C.A. TEST</th><th colspan=\'2\'>2ND C.A. TEST</th><th colspan=\'2\'>ASSIGNMENT</th><th colspan=\'2\'>EXAMINATION</th><th colspan=\'2\'>TOTAL</th><th rowspan=\'2\'>GRADE</th></tr>';
-		echo '<tr>';
-		for ($i = 0; $i < 5; $i++) { 
-			echo '<th>SCORE OBTAINED</th>';
-			echo '<th>SCORE OBTAINABLE</th>';
-		}
-		echo '</tr>';
+		$string .= '<section class=\'basic_info field_set\'>';
+		$string .= '<article id=\'passport\'>'.View::show_pic($this->passport, strtolower($this->name)).'</article>';
+		$string .= '<article class=\'names\'>';
+		$string .= '<div><span>Student\'s name: </span><span>'.strtoupper($this->name).'</span></div>';
+		$string .= '<div><span>Student\'s class: </span><span>'.$this->class.'</span></div>';
+		$string .= '<div><span>Result session: </span><span>'.$this->session.'</span></div>';
+		$string .= '<div><span>Result term: </span><span>'.$this->term.'</span></div>';
+		$string .= '<div><span>Student\'s gender: </span><span>'.$this->gender.'</span></div>';
+		$string .= '<img src=\'../school/fpclogo.jpeg\' id=\'result_logo\'>';
+		$string .= '</section>';
 		if ($this->results) {
+			$string .= '<span class=\'toggle_result_view\'>full view</span>';
+			$string .= '<article class=\'results_table\'>';
+			$string .= '<table class=\'sticky_parts\'>';
+			$string .= '<thead><tr><th rowspan=\'2\'>S/N</th><th rowspan=\'2\'>SUBJECT</th><th colspan=\'2\'>1ST C.A. TEST</th><th colspan=\'2\'>2ND C.A. TEST</th><th colspan=\'2\'>ASSIGNMENT</th><th colspan=\'2\'>EXAMINATION</th><th colspan=\'2\'>TOTAL</th><th rowspan=\'2\'>GRADE</th></tr>';
+			$string .= '<tr>';
+			for ($i = 0; $i < 5; $i++) { 
+				$string .= '<th>SCORE OBTAINED</th>';
+				$string .= '<th>SCORE OBTAINABLE</th>';
+			}
+			$string .= '</tr></thead>';
 			$index = 1;
+			$string .= '<tbody>';
 			foreach ($this->results as $result) {
 				$scores = array();
-				echo '<tr>';
-				echo '<td>'.$index.'</td>';
+				$string .= '<tr>';
+				$string .= '<th>'.$index.'.</th>';
 				foreach ($result as $key => $value) {
 					if ($key == 'subject') {
-						echo '<td>'.strtoupper($value).'</td>';
+						$string .= '<th>'.strtoupper($value).'</th>';
 					} else {
 						if (preg_match('/ca/i', $key)) {
 							$obtainable = 15;
@@ -627,37 +661,39 @@ class Show_Student_Result {
 							$obtainable = 60;
 						}
 						$scores[] = $value;
-						echo $value != null ? '<td>'.$value.'</td>' : '<td>-</td>';
-						echo '<td>'.$obtainable.'</td>';
+						$string .= $value != null ? '<td>'.$value.'</td>' : '<td>-</td>';
+						$string .= '<td>'.$obtainable.'</td>';
 					}
 				}
 				$total = total($scores);
 				$subjects_scores[] = $total;
-				echo '<td>'.$total.'</td>';
-				echo '<td>100</td>';
-				echo '<td>'.get_grade($total).'</td>';
-				echo '</tr>';
+				$string .= '<td>'.$total.'</td>';
+				$string .= '<td>100</td>';
+				$string .= '<td>'.get_grade($total).'</td>';
+				$string .= '</tr>';
 				$index++;
 			}
-			echo '</table>';
-			echo '<div>';
+			$string .= '</tbody></table>';
+			$string .= '</article>';
+			$string .= '<article class=\'student_performance_data field_set\'>';
 			$total_score_obtained = total_obtained($subjects_scores);
-			echo '<p>TOTAL SCORE OBTAINED: '.$total_score_obtained.'</p>';
-			$total_score_obtained = sizeof($this->results) * 100;
-			echo '<p>TOTAL SCORE OBTAINABLE: '.$total_score_obtained.'</p>';
+			$string .= '<div class=\'s_ed\'>Total score obtained: '.$total_score_obtained.'</div>';
+			$total_score_obtainable = sizeof($this->results) * 100;
+			$string .= '<div class=\'s_able\'>Total score obtainable: '.$total_score_obtainable.'</div>';
 			$percentage = get_term_percentage($subjects_scores, sizeof($this->results));
-			echo '<p>TERM PERCENTAGE: '.$percentage.'%</p>';
-			echo '<p>TOTAL NUMBER OF DAYS PRESENT: '.$this->attendance['count'].'</p>';
-			echo '<p>TOTAL NUMBER OF DAYS SCHOOL WAS OPEN: '.$this->attendance['total'].'</p>';
-			echo '<p>PERCENTAGE OF ATTENDANCE: '.$this->attendance['perc'].'%</p>';
-			echo '<p>CLASS TEACHER\'S COMMENT: '.strtoupper($this->comments['class_teacher_remark']).'</p>';
-			echo '<p>PRINCIPAL\'S COMMENT: '.strtoupper($this->comments['principal_remark']).'</p>';
-			echo '</div>';
+			$string .= '<div class=\'s_tage\'>Score percentage: '.round($percentage, 2).'%</div>';
+			$string .= '<div class=\'a_ent\'>Number of days present: '.$this->attendance['count'].'</div>';
+			$string .= '<div class=\'a_pen\'>Total number of school days: '.$this->attendance['total'].'</div>';
+			$string .= '<div class=\'a_tage\'>Percentage of attendance: '.round($this->attendance['perc'], 2).'%</div>';
+			$string .= '<div class=\'c_er\'>Class teacher\'s comment: '.@strtoupper($this->comments['class_teacher_remark']).'</div>';
+			$string .= '<div class=\'c_al\'>Principal\'s comment: '.@strtoupper($this->comments['principal_remark']).'</div>';
+			$string .= '</article>';
 		}
 		else {
-			echo '</table><h4>THIS RESULT IS NOT PUBLISHED YET. PLEASE CHECK BACK LATER OR MEET YOUR CLASS TEACHER.</h4>';
+			$string .= '<strong>THIS RESULT IS NOT PUBLISHED YET. PLEASE CHECK BACK LATER OR MEET YOUR CLASS TEACHER.</strong>';
 		}
-		echo View::back_to_homepage();
+		$string .= '<article class=\'homepage\'><a href=\'./index.php\'>GO TO HOMEPAGE</a></article>';
+		return $string;
 	}
 }
 class Dec_Choose_Publish {//declares form to choose result to publish
@@ -667,17 +703,35 @@ class Dec_Choose_Publish {//declares form to choose result to publish
 	}
 	public function dec_form() {
 		$students = $this->results;
+		$string = '';
 		$all = '';
-		echo '<form method=\'post\' action=\'publishresults.php\'>';
-		foreach ($students as $student) {
-			foreach ($student as $session) {
-				$all .= $session['student_id'].'_'.$session['session'].'_'.$session['term'].'&';
-				echo '<p><input type=\'checkbox\' name=\'to_publish[]\' value=\''.$session['student_id'].'_'.$session['session'].'_'.$session['term'].'\' />'.$session['name'].' '.$session['session'].' '.$session['term'].'.</p>';
+		if (sizeof($this->results) > 0) {
+			$string .= '<form method=\'post\' action=\'publishresults.php\'>';
+			$string .= '<table>';
+			$string .= '<tr><th>-</th><th>STUDENT\'S NAME</th><th>SESSION</th><th>TERM</th></tr>';
+			$string1 = '';
+			foreach ($students as $student) {
+				foreach ($student as $session) {
+					$string1 .= '<tr>';
+					$all .= $session['student_id'].'_'.$session['session'].'_'.$session['term'].'&';
+					$string1 .= '<td>
+					<input type=\'checkbox\' name=\'to_publish[]\' value=\''.$session['student_id'].'_'.$session['session'].'_'.$session['term'].'\'>
+					</td>
+					<td>'.$session['name'].'</td>
+					<td>'.$session['session'].'</td>
+					<td>'.strtoupper($session['term']).'</td>';
+					$string1 .= '</tr>';
+				}
 			}
+			$string .= '<tr><td><input type=\'checkbox\' name=\'mark_all\' value=\''.$all.'\' /></td><td colspan=\'3\'>SELECT ALL</td></tr>';
+			$string .= $string1;
+			$string .= '<tr><td colspan=\'4\'><input type=\'submit\' name=\'pub_sub\' value=\'Publish Selected\' /></td></tr>';
+			$string .= '</table>';
+			$string .= '</form>';
+		} else {
+			echo '<strong>NO RESULT LEFT TO PUBLISH FOR THIS CLASS.</strong>';
 		}
-		echo '<p><input type=\'checkbox\' name=\'check_all\' value=\''.$all.'\' />CHECK ALL.</p>';
-		echo '<input type=\'submit\' name=\'pub_sub\' value=\'PUBLISH SELECTED\' />';
-		echo '</form>';
+		return $string;
 	}
 }
 class Dec_Mark_Attendance {//declares form to mark attendance from
@@ -689,24 +743,25 @@ class Dec_Mark_Attendance {//declares form to mark attendance from
 	}
 	public function dec_form() {
 		$all = '';
-		echo '<form method=\'post\' action=\'attendance.php\'>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>STUDENT\'S NAME</th><th>MARK PRESENT</th></tr>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'attendance.php\'>';
+		$string .= '<table>';
+		$string .= '<tr><th>S/N</th><th>STUDENT\'S NAME</th><th>MARK PRESENT</th></tr>';
+		$string .= '<tr><td>-</td><td>SELECT ALL</td><td><input type=\'checkbox\' name=\'mark_all\' value=\'all\' /></td>';
 		$index = 1;
 		foreach ($this->students as $student) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
-			$all .= $student['student_id'].'&';
+			$string .= '<tr>';
+			$string .= '<td>'.$index.'.</td>';
 			$name = $student['student_first_name'].' '.$student['student_last_name'];
-			echo '<td>'.$name.'</td><td><input type=\'checkbox\' name=\'presents[]\' value=\''.$student['student_id'].'\' /></td>';
-			echo '</tr>';
+			$string .= '<td>'.$name.'</td><td><input type=\'checkbox\' name=\'presents[]\' value=\''.$student['student_id'].'\' /></td>';
+			$string .= '</tr>';
 			$index++;
 		}
-		echo '<tr><td>'.$index.'</td><td>MARK ALL</td><td><input type=\'checkbox\' name=\'check_all\' value=\''.$all.'\' /></td>';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\' />';
-		echo '<tr><td colspan=\'3\'><input type=\'submit\' name=\'attendance_sub\' value=\'MARK ATTENDANCE\' /></td></tr>';
-		echo '<table>';
-		echo '</form>';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\' />';
+		$string .= '<tr><td colspan=\'3\'><input type=\'submit\' name=\'attendance_sub\' value=\'Mark attendance\' /></td></tr>';
+		$string .= '</table>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Choose_Promote {
@@ -755,42 +810,42 @@ class Dec_Choose_Promote {
 		return $next_class;
 	}
 	public function dec_form() {
-		echo '<form method=\'post\' action=\'promote.php\'>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>MARK</th><th>STUDENT</th></th></tr>';
-		echo '<tr><td>-</td><td><input type=\'checkbox\' name=\'mark_all\' value=\''.$this->class.'\' /></td><td>MARK ALL</td></tr>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'promote.php\'>';
+		$string .= '<p>Select students to promote:</p>';
+		$string .= '<table>';
+		$string .= '<tr><td>-</td><td>MARK ALL</td><td><input type=\'checkbox\' name=\'mark_all\' value=\''.$this->class.'\' /></td></tr>';
 		$index = 1;
 		foreach ($this->students as $student) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
+			$string .= '<tr><td>'.$index++.'.</td>';
 			$name = $student['student_first_name'].' '.$student['student_last_name'];
-			echo '<td><input type=\'checkbox\' name=\'students[]\' value=\''.$student['student_id'].'\' /></td><td>'.$name.'</td>';
-			echo '</tr>';
-			$index++;
+			$string .= '<td>'.$name.'</td><td><input type=\'checkbox\' name=\'students[]\' value=\''.$student['student_id'].'\' /></td>';
+			$string .= '</tr>';
 		}
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\'>';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$this->class.'\'>';
 		if (preg_match('/[12]/', $this->class)) {
 			$next = $this->get_next_class($this->class);
-			echo '<input type=\'hidden\' name=\'next_class\' value=\''.$next.'\' />';
-			echo '<tr><td colspan=\'3\'><input type=\'submit\' name=\'sub_promote\' value=\'PROMOTE TO '.$next.'\' /></td></tr>';
-			echo '</table>';
+			$string .= '<input type=\'hidden\' name=\'next_class\' value=\''.$next.'\' />';
+			$string .= '<tr><td colspan=\'3\'><input type=\'submit\' name=\'sub_promote\' value=\'Promote to '.$next.'\' /></td></tr>';
+			$string .= '</table>';
 		} else {
 			if ($this->class == 'JSS 3A' || $this->class == 'JSS 3B') {
-				echo '</table>';
-				echo '<p>CHOOSE NEXT CLASS FOR SELECTED STUDENTS: ';
-				echo '<select name=\'next_class\'>';
-				echo '<option value=\'SSS 1 ART\'>SSS 1 ART';
-				echo '<option value=\'SSS 1 COMMERCIAL\'>SSS 1 COMMERCIAL';
-				echo '<option value=\'SSS 1 SCIENCE\'>SSS 1 SCIENCE';
-				echo '</select>';
-				echo '</p>';
-				echo '<p><input type=\'submit\' name\'sub_promote\' value=\'PROMOTE TO NEXT CLASS\' /></p>';
+				$string .= '</table>';
+				$string .= '<p><label>Choose next class for selected students: </label>';
+				$string .= '<select name=\'next_class\'>';
+				$string .= '<option value=\'\'>---</option>';
+				$string .= '<option value=\'SSS 1 ART\'>SSS 1 ART</option>';
+				$string .= '<option value=\'SSS 1 COMMERCIAL\'>SSS 1 COMMERCIAL</option>';
+				$string .= '<option value=\'SSS 1 SCIENCE\'>SSS 1 SCIENCE</option>';
+				$string .= '</select></p>';
+				$string .= '<p><input type=\'submit\' name=\'sub_promote\' value=\'Promote to next class\' /></p>';
 			} else if ($this->class == 'SSS 3 ART' || $this->class == 'SSS 3 COMMERCIAL' || $this->class == 'SSS 3 SCIENCE') {
-				echo '<tr><td colspan=\'3\'><input type=\'submit\' name=\'sub_promote\' value=\'PASS OUT SELECTED STUDENTS\' /></td></tr>';
-			echo '</table>';
+				$string .= '<tr><td colspan=\'3\'><input type=\'submit\' name=\'sub_promote\' value=\'Pass out selected students\' /></td></tr>';
+			$string .= '</table>';
 			}
 		}
-		echo '</form>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Show_Info_Box {//shows box containing st info
@@ -825,39 +880,44 @@ class Show_Student_Subjects {//shows all class subjects and subjects offered ny 
 		$this->student_subjects = $spec;
 	}
 	public function show() {
-		echo '<div>';
-		echo '<p>ALL SUBJECTS OFFERED IN CLASS:</p>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>SUBJECT</th><th>SUBJECT TEACHER</th></tr>';
+		$string = '';
+		$string .= '<div>';
+		$string .= '<p>All subjects offered in '.$_COOKIE['student_class'].':</p>';
+		$string .= '<table>';
+		$string .= '<tr><th>S/N</th><th>SUBJECT</th><th>SUBJECT TEACHER</th></tr>';
 		$index = 1;
 		foreach ($this->all_subjects as $subject) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
-			echo '<td>'.strtoupper($subject['subject']).'</td><td>'.$subject['teacher_name'].'</td>';
-			echo '</tr>';
+			$string .= '<tr>';
+			$string .= '<td>'.$index.'.</td>';
+			$string .= '<td>'.strtoupper($subject['subject']).'</td><td>'.$subject['teacher_name'].'</td>';
+			$string .= '</tr>';
 			$index++;
 		}
-		echo '</table>';
-		echo '</div>';
-		echo '<div>';
-		echo '<p>ALL SUBJECTS OFFERED BY STUDENT:</p>';
-		echo '<table>';
-		echo '<tr><th>S/N</th><th>SUBJECT</th><th>SUBJECT TEACHER</th></tr>';
-		$index = 1;
-		foreach ($this->student_subjects as $subject) {
-			echo '<tr>';
-			echo '<td>'.$index.'</td>';
-			for($i = 0; $i < sizeof($this->all_subjects); $i++) {
-				if ($subject == $this->all_subjects[$i]['subject']) {
-					echo '<td>'.strtoupper($subject).'</td><td>'.$this->all_subjects[$i]['teacher_name'].'</td>';
-					break;
+		$string .= '</table>';
+		$string .= '</div>';
+		$string .= '<div>';
+		$string .= '<p>All subjects registered by you:</p>';
+		if (!$this->student_subjects) {
+			$string .= 'NO REGISTERED SUBJECTS.';
+		} else {
+			$index = 1;
+			$string .= '<table>';
+			$string .= '<tr><th>S/N</th><th>SUBJECT</th><th>SUBJECT TEACHER</th></tr>';
+			foreach ($this->student_subjects as $subject) {
+				$string .= '<tr>';
+				$string .= '<td>'.$index++.'.</td>';
+				for($i = 0; $i < sizeof($this->all_subjects); $i++) {
+					if ($subject == $this->all_subjects[$i]['subject']) {
+						$string .= '<td>'.strtoupper($subject).'</td><td>'.$this->all_subjects[$i]['teacher_name'].'</td>';
+						break;
+					}
 				}
+				$string .= '</tr>';
 			}
-			echo '</tr>';
-			$index++;
+			$string .= '</table>';
+			$string .= '</div>';
 		}
-		echo '</table>';
-		echo '</div>';
+		return $string;
 	}
 }
 class Dec_Write_Students_Comments {
@@ -873,7 +933,7 @@ class Dec_Write_Students_Comments {
 		$this->term = $term;
 		$this->type = $type;
 	}
-	public function dec_form() {
+	public function dec_form() { /* ****** */
 		echo '<p>CLASS: '.$this->class.'</p>';
 		echo '<p>SESSION: '.$this->session.'</p>';
 		echo '<p>TERM: '.$this->term.'</p>';
@@ -904,4 +964,3 @@ class Dec_Write_Students_Comments {
 		echo '</form>';
 	}
 }
-?>

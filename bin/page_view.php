@@ -17,11 +17,6 @@ function show_footer() {
 	echo '</body>'."\n";
 	echo '</html>'."\n";
 }
-function create_sidebar($array) {
-	foreach ($array as $key => $value) {
-		echo '<p><a href='.$value.'>'.$key.'</a></p>'."\n";
-	}
-}
 class Dec_Addst {//shows the staff of student add form
 	private $existing;
 	private $student_field_array = array('student_id' => '', 'student_fn' => '', 'student_ln' => '', 'student_username' => '', 'student_class' => '');
@@ -52,78 +47,76 @@ class Dec_Addst {//shows the staff of student add form
 		if ($this->type == 'student') {
 			$this->set_add_fields();
 			function class_options($sel) {
-				$array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-				 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+				$array = CLASSES;
+				$string = '';
 				foreach ($array as $key) {
-					echo '<option value=\''.$key.'\'';
+					$string .= '<option value=\''.$key.'\'';
 					if ($key == $sel) {
-						echo ' selected';
+						$string .= ' selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			$student_fn = $this->student_field_array['student_fn'];
 			$student_ln = $this->student_field_array['student_ln'];
 			$student_class = $this->student_field_array['student_class'];
 			$student_username = $this->student_field_array['student_username'];
 			$student_id = $this->student_field_array['student_id'];
-			echo '<form method=\'post\' action=\'addst.php\'>';
-			echo '<p>STUDENT\'S FIRST NAME: <input type=\'text\' name=\'student_first_name\' value=\''.$student_fn.'\' maxlength=\'20\' /></p>';
-			echo '<p>STUDENT\'S LAST NAME: <input type=\'text\' name=\'student_last_name\' value=\''.$student_ln.'\' maxlength=\'25\' /></p>';
-			echo '<p>STUDENT\'S USERNAME: <input type=\'text\' name=\'student_username\' value=\''.$student_username.'\' maxlength=\'12\' /></p>';
-			echo '<p>STUDENT\'S CLASS: <select name=\'student_class\'>';
-			echo '<option value=\'\'>---</option>';
-			class_options($this->student_field_array['student_class']);
-			echo '</select></p>';
-			echo '<input type=\'hidden\' name=\'type\' value=\'student\' />';
-			echo '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
-			echo '<input type=\'hidden\' name=\'id\' value=\''.$student_id.'\' />';
-			echo '<p><input type=\'submit\' name=\'addst_submit\' value=\'ADD STUDENT\'></p>';
-			echo '</form>';
+			$string = '<p><label>Student\'s first name: </label><input type=\'text\' name=\'student_first_name\' value=\''.$student_fn.'\' maxlength=\'20\' /></p>';
+			$string .= '<p><label>Student\'s last name: </label><input type=\'text\' name=\'student_last_name\' value=\''.$student_ln.'\' maxlength=\'25\' /></p>';
+			$string .= '<p><label>Student\'s username: </label><input type=\'text\' name=\'student_username\' value=\''.$student_username.'\' maxlength=\'12\' /></p>';
+			$string .= '<p><label>Students\'s class: </label><select name=\'student_class\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= class_options($this->student_field_array['student_class']);
+			$string .= '</select></p>';
+			$string .= '<input type=\'hidden\' name=\'type\' value=\'student\' />';
+			$string .= '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
+			$string .= '<input type=\'hidden\' name=\'id\' value=\''.$student_id.'\' />';
+			$string .= '<p><input type=\'submit\' name=\'addst_submit\' value=\'Add student\'></p>';
 		} else if ($this->type == 'staff') {
 			$this->set_add_fields();
 			function role_options($sel) {
-				$array = array('PRINCIPAL', 'VICE PRINCIPAL', 'TEACHER', 'SECURITY', 'SANITARY PERSONEL', 'OTHERS');
+				$array = ROLES;
+				$string = '';
 				foreach ($array as $key) {
-					echo '<option value=\''.$key.'\'';
+					$string .= '<option value=\''.$key.'\'';
 					if ($key == $sel) {
-						echo ' selected';
+						$string .= ' selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			$staff_fn = $this->staff_field_array['staff_fn'];
 			$staff_ln = $this->staff_field_array['staff_ln'];
 			$staff_role = $this->staff_field_array['staff_role'];
 			$staff_username = $this->staff_field_array['staff_username'];
 			$staff_id = $this->staff_field_array['staff_id'];
-			echo '<form method=\'post\' action=\'addst.php\'>';
-			echo '<p>STAFF\'S FIRST NAME: <input type=\'text\' name=\'staff_first_name\' value=\''.$staff_fn.'\' maxlength=\'20\' /></p>';
-			echo '<p>STAFF\'S LAST NAME: <input type=\'text\' name=\'staff_last_name\' value=\''.$staff_ln.'\' maxlength=\'25\' /></p>';
-			echo '<p>STAFF\'S USERNAME: <input type=\'text\' name=\'staff_username\' value=\''.$staff_username.'\' maxlength=\'12\' /></p>';
-			echo '<p>STAFF\'S ROLE: <select name=\'staff_role\'>';
-			echo '<option value=\'\'>---</option>';
-			role_options($staff_role);
-			echo '</select></p>';
-			echo '<input type=\'hidden\' name=\'type\' value=\'staff\' />';
-			echo '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
-			echo '<input type=\'hidden\' name=\'id\' value=\''.$staff_id.'\' />';
-			echo '<p><input type=\'submit\' name=\'addst_submit\' value=\'ADD STAFF\'></p>';
-			echo '</form>';
+			$string = '<p><label>Staff\'s first name: </label><input type=\'text\' name=\'staff_first_name\' value=\''.$staff_fn.'\' maxlength=\'20\' /></p>';
+			$string .= '<p><label>Staff\'s last name: </label><input type=\'text\' name=\'staff_last_name\' value=\''.$staff_ln.'\' maxlength=\'25\' /></p>';
+			$string .= '<p><label>Staff\'s username: </label><input type=\'text\' name=\'staff_username\' value=\''.$staff_username.'\' maxlength=\'12\' /></p>';
+			$string .= '<p><label>Staff\'s role: </label><select name=\'staff_role\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= role_options($staff_role);
+			$string .= '</select></p>';
+			$string .= '<input type=\'hidden\' name=\'type\' value=\'staff\' />';
+			$string .= '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
+			$string .= '<input type=\'hidden\' name=\'id\' value=\''.$staff_id.'\' />';
+			$string .= '<p><input type=\'submit\' name=\'addst_submit\' value=\'Add staff\'></p>';
 		}
+		return $string;
 	}
 }
 class Dec_Editst_Bio {//shows the staff of student add form
 	private $type;
 	private $existing;
 	private $array;
-	private $id;
 	private $student_field_array = array('student_id' => '', 'p_name' => '', 'p_phone' => '', 'p_email' => '', 's_dob' => '', 's_address' => '',
 		 's_storg' => '', 's_gender' => '', 's_religion' => '', 's_passport' => '');
 	private $staff_field_array = array('staff_id' => '', 'staff_phone' => '', 'staff_email' => '', 'staff_dob' => '', 'nok_name' => '', 'nok_phone' => '', 'staff_address' => '', 'staff_storg' => '', 'staff_gender' => '', 'staff_religion' => '', 'staff_passport' => '');
-	public function __construct($type, $id, $existing = false, $array = false) {
+	public function __construct($type, $existing = false, $array = false) {
 		$this->type = $type;
-		$this->id = $id;
 		$this->existing = $existing;
 		$this->array = $array;
 	}
@@ -154,39 +147,46 @@ class Dec_Editst_Bio {//shows the staff of student add form
 		}
 	}
 	public function dec_addst_bio() {
+		$string = '';
 		if ($this->type == 'student') {
 			$this->set_add_fields();
 			function state_options($sel) {
 				$states = array('FCT','ABIA', 'ADAMAWA', 'AKWA IBOM', 'ANAMBRA', 'BAUCHI', 'BAYELSA', 'BENUE', 'BORNO', 'CROSS RIVER', 'DELTA', 'EBONYI','EDO', 'EKITI', 'ENUGU', 'GOMBE', 'IMO', 'JIGAWA', 'KADUNA', 'KANO', 'KATSINA', 'KEBBI', 'KOGI', 'KWARA', 'LAGOS', 'NASARAWA', 'NIGER', 'OGUN', 'ONDO', 'OSUN', 'OYO', 'PLATEAU', 'RIVERS', 'SOKOTO', 'TARABA', 'YOBE', 'ZAMFARA');
+				$string = '';
 				foreach ($states as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			function gender_options($sel) {
+				$string = '';
 				$genders = array('FEMALE', 'MALE');
 				foreach ($genders as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			function religion_options($sel) {
-				$religions = array('ISLAM', 'CHRISTIANITY', 'OTHERS');
+				$religions = array('CHRISTIANITY', 'ISLAM', 'OTHERS');
+				$string = '';
 				foreach ($religions as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
-			$student_id = $this->id;
+			$student_id = $this->student_field_array['student_id'];
 			$p_name = $this->student_field_array['p_name'];
 			$p_phone = $this->student_field_array['p_phone'];
 			$p_email = $this->student_field_array['p_email'];
@@ -196,63 +196,69 @@ class Dec_Editst_Bio {//shows the staff of student add form
 			$s_gender = $this->student_field_array['s_gender'];
 			$s_religion = $this->student_field_array['s_religion'];
 			$s_passport = $this->student_field_array['s_passport'];
-			echo '<form method=\'post\' action=\'editst_bio.php\' enctype=\'multipart/form-data\'>';
-			echo '<p>NAME OF PARENT/ GUARDIAN: <input type=\'text\' name=\'parent_name\' value=\''.$p_name.'\' maxlength=\'40\' /></p>';
-			echo '<p>PARENT\'S OR GUARDIAN\'S PHONE NUMBER: <input type=\'text\' name=\'parent_phone\' value=\''.$p_phone.'\' maxlength=\'14\' /></p>';
-			echo '<p>PARENT\'S OR GUARDIAN\'S EMAIL ADDRESS (OPTIONAL): <input type=\'text\' name=\'parent_email\' value=\''.$p_email.'\' maxlength=\'35\' /></p>';
-			echo '<p>STUDENT\'S DATE OF BIRTH (yyyy/mm/dd): <input type=\'text\' name=\'student_dob\' value=\''.$s_dob.'\' maxlength=\'10\' /></p>';
-			echo '<p>STUDENT\'S RESIDENTIAL ADDRESS: <textarea name=\'student_address\' cols=\'30\' rows=\'5\' resizeable=\'no\' maxlength=\'100\'>'.$s_address.'</textarea></p>';
-			echo '<p>STUDENT\'S STATE OF ORIGIN: <select name=\'student_storg\'>';
-			echo '<option value=\'\'>---</option>';
-			state_options($s_storg);
-			echo '</select></p>';
-			echo '<p>STUDENT\'S GENDER: <select name=\'student_gender\'>';
-			echo '<option value=\'\'>---</option>';
-			gender_options($s_gender);
-			echo '</select></p>';
-			echo '<p>STUDENT\'S RELIGION: <select name=\'student_religion\'>';
-			echo '<option value=\'\'>---</option>';
-			religion_options($s_religion);
-			echo '</select></p>';
-			echo '<p>CHOOSE A PASSPORT FILE: <input type=\'file\' name=\'student_passport\' value=\''.$s_passport.'\' /></p>';
-			echo '<input type=\'hidden\' name=\'type\' value=\'student\' \>';
-			echo '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
-			echo '<input type=\'hidden\' name=\'id\' value=\''.$student_id.'\' \>';
-			echo '<p><input type=\'submit\' name=\'editst_submit\' value=\'EDIT STUDENT\'></p>';
-			echo '</form>';
+			$string .= '<p><label>Name of parent / guardian: </label><input type=\'text\' name=\'parent_name\' value=\''.$p_name.'\' maxlength=\'45\' required /></p>';
+			$string .= '<p><label>Parent\'s / guardian\'s phone number: </label><input type=\'number\' name=\'parent_phone\' value=\''.$p_phone.'\' maxlength=\'14\' /></p>';
+			$string .= '<p><label>Parent\'s / guardian\'s email address (optional): </label><input type=\'email\' name=\'parent_email\' value=\''.$p_email.'\' maxlength=\'35\' /></p>';
+			$string .= '<p><label>Student\'s date of birth (yyyy/mm/dd): </label><input type=\'date\' name=\'student_dob\' value=\''.$s_dob.'\'/></p>';
+			$string .= '<p><label>Student\'s residential address: </label><textarea name=\'student_address\' cols=\'30\' rows=\'5\' resizeable=\'no\' maxlength=\'100\'>'.$s_address.'</textarea></p>';
+			$string .= '<p><label>Student\'s state of origin: </label><select name=\'student_storg\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= state_options($s_storg);
+			$string .= '</select></p>';
+			$string .= '<p><label>Student\'s gender: </label><select name=\'student_gender\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= gender_options($s_gender);
+			$string .= '</select></p>';
+			$string .= '<p><label>Student\'s religion: </label><select name=\'student_religion\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= religion_options($s_religion);
+			$string .= '</select></p>';
+			$string .= '<p><label>Choose a passport file <span class=\'guidelines_icon\'>?</span>';
+			$string .= $this->existing ? ' (optional)' : '';
+			$string .= ': </label><input type=\'file\' name=\'student_passport\' value=\''.$s_passport.'\' /></p>';
+			$string .= '<input type=\'hidden\' name=\'type\' value=\'student\' \>';
+			$string .= '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
+			$string .= '<input type=\'hidden\' name=\'id\' value=\''.$student_id.'\' \>';
+			$string .= '<p><input type=\'submit\' name=\'editst_submit\' value=\'Add student bio\'></p>';
 		} else if ($this->type == 'staff') {
 			$this->set_add_fields();
 			function state_options($sel) {
+				$string = '';
 				$states = array('FCT','ABIA', 'ADAMAWA', 'AKWA IBOM', 'ANAMBRA', 'BAUCHI', 'BAYELSA', 'BENUE', 'BORNO', 'CROSS RIVER', 'DELTA', 'EBONYI','EDO', 'EKITI', 'ENUGU', 'GOMBE', 'IMO', 'JIGAWA', 'KADUNA', 'KANO', 'KATSINA', 'KEBBI', 'KOGI', 'KWARA', 'LAGOS', 'NASARAWA', 'NIGER', 'OGUN', 'ONDO', 'OSUN', 'OYO', 'PLATEAU', 'RIVERS', 'SOKOTO', 'TARABA', 'YOBE', 'ZAMFARA');
 				foreach ($states as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			function gender_options($sel) {
+				$string = '';
 				$genders = array('FEMALE', 'MALE');
 				foreach ($genders as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
 			function religion_options($sel) {
-				$religions = array('ISLAM', 'CHRISTIANITY', 'OTHERS');
+				$string = '';
+				$religions = array('CHRISTIANITY', 'ISLAM', 'OTHERS');
 				foreach ($religions as $key) {
-					echo '<option value=\''.$key.'\' ';
+					$string .= '<option value=\''.$key.'\' ';
 					if ($key == $sel) {
-						echo 'selected';
+						$string .= 'selected';
 					}
-					echo '>'.$key.'</option>';
+					$string .= '>'.$key.'</option>';
 				}
+				return $string;
 			}
-			$staff_id = $this->id;
+			$staff_id = $this->staff_field_array['staff_id'];
 			$s_phone = $this->staff_field_array['staff_phone'];
 			$s_email = $this->staff_field_array['staff_email'];
 			$s_dob = $this->staff_field_array['staff_dob'];
@@ -263,103 +269,38 @@ class Dec_Editst_Bio {//shows the staff of student add form
 			$s_gender = $this->staff_field_array['staff_gender'];
 			$s_religion = $this->staff_field_array['staff_religion'];
 			$s_passport = $this->staff_field_array['staff_passport'];
-			echo '<form method=\'post\' action=\'editst_bio.php\' enctype=\'multipart/form-data\'>';
-			echo '<p>STAFF\'S PHONE NUMBER: <input type=\'text\' name=\'staff_phone\' value=\''.$s_phone.'\' maxlength=\'14\' /></p>';
-			echo '<p>STAFF\'S EMAIL ADDRESS: <input type=\'text\' name=\'staff_email\' value=\''.$s_email.'\' maxlength=\'35\' /></p>';
-			echo '<p>STAFF\'S DATE OF BIRTH (yyyy/mm/dd): <input type=\'text\' name=\'staff_dob\' value=\''.$s_dob.'\' maxlength=\'10\' /></p>';
-			echo '<p>NAME OF NEXT OF KIN: <input type=\'text\' name=\'nok_name\' value=\''.$n_name.'\' maxlength=\'45\' /></p>';
-			echo '<p>PHONE NUMBER OF NEXT OF KIN: <input type=\'text\' name=\'nok_phone\' value=\''.$n_phone.'\' maxlength=\'14\' /></p>';
-			echo '<p>STAFF\'S ADDRESS: <textarea name=\'staff_address\' cols=\'30\' rows=\'5\' resizeable=\'no\' maxlength=\'100\'>'.$s_address.'</textarea></p>';
-			echo '<p>STAFF\'S STATE OF ORIGIN: <select name=\'staff_storg\'>';
-			echo '<option value=\'\'>---</option>';
-			state_options($s_storg);
-			echo '</select></p>';
-			echo '<p>STAFF\'S GENDER: <select name=\'staff_gender\'>';
-			echo '<option value=\'\'>---</option>';
-			gender_options($s_gender);
-			echo '</select></p>';
-			echo '<p>STAFF\'S RELIGION: <select name=\'staff_religion\'>';
-			echo '<option value=\'\'>---</option>';
-			religion_options($s_religion);
-			echo '</select></p>';
-			echo '<p>CHOOSE A PASSPORT FILE: <input type=\'file\' name=\'staff_passport\' value=\''.$s_passport.'\' /></p>';
-			echo '<input type=\'hidden\' name=\'type\' value=\'staff\' \>';
-			echo '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
-			echo '<input type=\'hidden\' name=\'id\' value=\''.$staff_id.'\' \>';
-			echo '<p><input type=\'submit\' name=\'editst_submit\' value=\'EDIT STAFF\'></p>';
-			echo '</form>';
+			$string .= '<p><label>Staff\'s phone number: </label><input type=\'number\' name=\'staff_phone\' value=\''.$s_phone.'\' maxlength=\'14\' /></p>';
+			$string .= '<p><label>Staff\'s email address: </label><input type=\'email\' name=\'staff_email\' value=\''.$s_email.'\' maxlength=\'35\' /></p>';
+			$string .= '<p><label>Staff\'s date of birth (yyyy/mm/dd): </label><input type=\'date\' name=\'staff_dob\' value=\''.$s_dob.'\' maxlength=\'10\' /></p>';
+			$string .= '<p><label>Name of next of kin: </label><input type=\'text\' name=\'nok_name\' value=\''.$n_name.'\' maxlength=\'45\' /></p>';
+			$string .= '<p><label>Phone number of next of kin: </label><input type=\'number\' name=\'nok_phone\' value=\''.$n_phone.'\' maxlength=\'14\' /></p>';
+			$string .= '<p><label>Staff\'s address: </label><textarea name=\'staff_address\' cols=\'30\' rows=\'5\' resizeable=\'no\' maxlength=\'100\'>'.$s_address.'</textarea></p>';
+			$string .= '<p><label>Staff\'s state of origin: </label><select name=\'staff_storg\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= state_options($s_storg);
+			$string .= '</select></p>';
+			$string .= '<p><label>Staff\'s gender: </label><select name=\'staff_gender\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= gender_options($s_gender);
+			$string .= '</select></p>';
+			$string .= '<p><label>Staff\'s religion: </label><select name=\'staff_religion\'>';
+			$string .= '<option value=\'\'>---</option>';
+			$string .= religion_options($s_religion);
+			$string .= '</select></p>';
+			$string .= '<p><label>Choose a passport file <span class=\'guidelines_icon\'>?</span>';
+			$string .= $this->existing ? ' (optional)' : '';
+			$string .= ': </label><input type=\'file\' name=\'staff_passport\' value=\''.$s_passport.'\' /></p>';
+			$string .= '<input type=\'hidden\' name=\'type\' value=\'staff\' \>';
+			$string .= '<input type=\'hidden\' name=\'existing\' value=\''.$this->existing.'\' />';
+			$string .= '<input type=\'hidden\' name=\'id\' value=\''.$staff_id.'\' \>';
+			$string .= '<p><input type=\'submit\' name=\'editst_submit\' value=\'Add staff bio\'></p>';
 		}
-	}
-}
-class Dec_Student_Search {//shows student search form
-	private $method;
-	public function __construct($type) {
-		$this->method = $type;
-	}
-	public function dec_form() {
-		$array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
-		if ($this->method == 'class') {
-			$method = 'lc';
-		} else if ($this->method == 'surname') {
-			$method = 'us';
-		}
-		$form = '<form method=\'post\' action=\'search_st.php?type=nt&method='.$method.'\'>';
-		switch ($this->method) {
-			case 'class':
-				$form .= '<p>CHOOSE STUDENT\'S CLASS: <select name=\'class_role\'>';
-				foreach ($array as $key) {
-					$form .= '<option value=\''.$key.'\'>'.$key.'</option>';
-				}
-				$form .= '</select></p>';
-				break;
-			case 'surname':
-				$form .= '<p>INPUT STUDENT\'S SURNAME: <input type=\'text\' name=\'surname\' /></p>';
-				break;
-			default:
-				break;
-		}
-		$form .= '<p><input type=\'submit\' value=\'SEARCH\' name=\'search_sub\' /></p>';
-		$form .= '</form>';
-		return $form;
-	}
-}
-class Dec_Staff_Search {//shows staff search form
-	private $method;
-	public function __construct($type) {
-		$this->method = $type;
-	}
-	public function dec_form() {
-		$array = array('PRINCIPAL', 'VICE PRINCIPAL', 'TEACHER', 'SECURITY', 'SANITARY PERSONEL', 'OTHERS');
-		if ($this->method == 'role') {
-			$method = 'or';
-		} else if ($this->method == 'surname') {
-			$method = 'us';
-		}
-		$form = '<form method=\'post\' action=\'search_st.php?type=fa&method='.$method.'\'>';
-		switch ($this->method) {
-			case 'role':
-				$form .= '<p>CHOOSE STAFF\'S ROLE: <select name=\'class_role\'>';
-				foreach ($array as $key) {
-					$form .= '<option value=\''.$key.'\'>'.$key.'</option>';
-				}
-				$form .= '</select></p>';
-				break;
-			case 'surname':
-				$form .= '<p>INPUT STAFF\'S SURNAME: <input type=\'text\' name=\'surname\' /></p>';
-				break;
-			default:
-				break;
-		}
-		$form .= '<p><input type=\'submit\' value=\'SEARCH\' name=\'search_sub\' /></p>';
-		$form .= '</form>';
-		return $form;
+		return $string;
 	}
 }
 class Dec_Student_Delete {//shows student delete form
 	public function dec_form() {
-		$array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$array = CLASSES;
 		$form = '<form method=\'post\' action=\'delete_st.php?type=nt\'>';
 		$form .= '<p>INPUT STUDENT\'S USERNAME(S): <input type=\'text\' name=\'input\' />';
 		$form .= '<br>(Separate usernames by comma(,) if you want to delete more than one student.)</p>';
@@ -370,7 +311,7 @@ class Dec_Student_Delete {//shows student delete form
 }
 class Dec_Staff_Delete {//shows staff delete form
 	public function dec_form() {
-		$array = array('PRINCIPAL', 'VICE PRINCIPAL', 'TEACHER', 'SECURITY', 'SANITARY PERSONEL', 'OTHERS');
+		$array = ROLES;
 		$form = '<form method=\'post\' action=\'delete_st.php?type=fa\'>';
 		$form .= '<p>INPUT STAFF\'S USERNAME(S): <input type=\'text\' name=\'input\' />';
 		$form .= '<br>(Separate usernames by comma(,) if you want to delete more than one staff.)</p>';
@@ -387,44 +328,50 @@ class Dec_Set_Session {//shows set session/term form... instantiated in set_sess
 		$this->cur_term = $term;
 	}
 	public function dec_form() {
+		$string = '';
 		function session_options($sel) {
-			$sess_array = array('2020/2021', '2021/2022', '2022/2023', '2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028', '2028/2029', '2029/2030');
+			$sess_array = array('2020/2021', '2021/2022', '2022/2023', '2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028', '2028/2029', '2029/2030', '2030/2031');
+			$string = '';
 			foreach ($sess_array as $key) {
-				echo '<option value=\''.$key.'\' ';
+				$string .= '<option value=\''.$key.'\' ';
 				if ($key == $sel) {
-					echo 'selected';
+					$string .= 'selected';
 				}
-				echo '>'.$key.'</option>';
+				$string .= '>'.$key.'</option>';
 			}
+			return $string;
 		}
 		function term_options($sel) {
 			$term_array = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM');
+			$string = '';
 			foreach ($term_array as $key) {
-				echo '<option value=\''.$key.'\' ';
+				$string .= '<option value=\''.$key.'\' ';
 				if ($key == $sel) {
-					echo 'selected';
+					$string .= 'selected';
 				}
-				echo '>'.$key.'</option>';
+				$string .= '>'.$key.'</option>';
 			}
+			return $string;
 		}	
-		echo '<form method=\'post\' action=\'set_sess.php\'>';
-		echo '<p>PLEASE SELECT A SESSION: <select name=\'session\'>';
-		session_options($this->cur_session);
-		echo '</select></p>';
-		echo '<p>PLEASE SELECT A TERM: <select name=\'term\'>';
-		term_options($this->cur_term);
-		echo '</select></p>';
-		echo '<p><input type=\'submit\' name=\'sess_submit\' value=\'SET SESSION\' /></p>';
-		echo '</form>';
+		$string .= '<form method=\'post\' action=\'set_session.php\'>';
+		$string .= '<p>Please select a session: <select name=\'session\'>';
+		$string .= session_options($this->cur_session);
+		$string .= '</select></p>';
+		$string .= '<p>Please select a term: <select name=\'term\'>';
+		$string .= term_options($this->cur_term);
+		$string .= '</select></p>';
+		$string .= '<p>Please select the date the selected period starts: <input type=\'date\' name=\'start_date\'>';
+		$string .= '<p><input type=\'submit\' name=\'sess_submit\' value=\'Set session\' /></p>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Set_All_Subjects {//shows set all subjects form... instantiated in set_all_subjects.php
 	public function dec_form() {
-		echo '<form method=\'post\' action=\'./set_allsubjects.php\'>';
-		echo '<p>TYPE IN THE SUBJECTS YOU WANT TO ADD TO THE DATABASE: ';
-		echo '<textarea name=\'all_subjects\' cols=\'50\' rows=\'10\'></textarea>';
-		echo '<br>(Separate subject names by comma(,) if you want to add more than one subjects.)</p>';
-		echo '<p><input type=\'submit\' name=\'add_su_sub\' value=\'ADD SUBJECTS\' /></p>';
+		echo '<form method=\'post\' action=\'./set_all_subjects.php\'>';
+		echo '<p>Type in the subjects you want to add to the curriculum into the field below.</p> <p>*Separate subject names by comma(,) if you want to add more than one subject.</p>';
+		echo '<p><textarea name=\'all_subjects\' cols=\'40\' rows=\'8\' autofocus></textarea></p>';
+		echo '<p><input type=\'submit\' name=\'add_su_sub\' value=\'Add subjects\' /></p>';
 		echo '</form>';
 	}
 }
@@ -434,8 +381,7 @@ class Dec_Set_Class_Subjects {//shows set class subject form... instantiated in 
 		$this->all_subjects = $all;
 	}
 	public function dec_classes() {
-		$class_array = array('JSS 1', 'JSS 2', 'JSS 3', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$class_array = CLASSES;
 		echo '<form method=\'post\' action=\'./set_class_subjects.php\' enctype=\'multipart/form-data\'>';
 		echo '<p>PLEASE SELECT A CLASS: <select name=\'class\'>';
 		foreach ($class_array as $class) {
@@ -476,7 +422,7 @@ class Dec_Set_Class_teacher {//shows set class teacher form... instantiated in s
 			echo '</tr>';
 		}
 		echo '</table>';
-		$class_array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE', 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$class_array = CLASSES;
 		echo '<form method=\'post\' action=\'./set_classteacher.php\' enctype=\'multipart/form-data\'>';
 		echo '<p>PLEASE SELECT A CLASS: <select name=\'class\'>';
 		foreach ($class_array as $class) {
@@ -504,8 +450,7 @@ class Dec_Set_Subject_Teacher {//shows set subject teacher form... instantiated 
 		$this->all_teachers = $teachers;
 	}
 	public function dec_classes() {
-		$class_array = array('JSS 1', 'JSS 2', 'JSS 3', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$class_array = CLASSES;
 		echo '<form method=\'post\' action=\'./set_subject_teacher.php\' enctype=\'multipart/form-data\'>';
 		echo '<p>PLEASE SELECT A CLASS: <select name=\'class\'>';
 		foreach ($class_array as $class) {
@@ -553,137 +498,138 @@ class Dec_Send_Mail {//declares the form to send mail to either staff or student
 		$this->sender_username = $sender_user;
 	}
 	public function dec_type() {
-		$sender_type = base64_decode($this->sender_type);
-		echo '<form method=\'post\' action=\'./send_mail.php?pe='.$this->sender_type.'&me='.$this->sender_username.'\'>';
-		echo '<h4>PLEASE SELECT WHO YOU WANT TO SEND MAIL TO:</h4>';
+		$sender_type = $this->sender_type;
+		$string = '';
+		$string .= '<form method=\'post\' action=\'./send_mail.php?pe='.base64_encode($this->sender_type).'&me='.base64_encode($this->sender_username).'\' class=\'select_receipient\'>';
+		$string .= '<p>Please select whom you want to send the mail to:</p>';
 		if ($sender_type == 'admin' || $sender_type == 'staff') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'staff_username\' />STAFF(USERNAME)</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'staff_username\' /><label>Staff (username)</label></p>';
 		}
 		if ($sender_type == 'admin') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'staff_role\' />STAFFS(ROLE)</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'staff_role\' /><label>Staff (role)</label></p>';
 		}
 		if ($sender_type == 'admin' || $sender_type == 'staff' || $sender_type == 'student') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'student_username\' />STUDENT(USERNAME)</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'student_username\' /><label>Student (username)<label></p>';
 		}
 		if ($sender_type == 'admin') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'student_class\' />STUDENTS(CLASS)</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'student_class\' /><label>Students (class)</label></p>';
 		}
 		if ($sender_type == 'staff') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'admin\' />ADMIN</p>';
-			echo '<p><input type=\'radio\' name=\'type\' value=\'subject_students\' />SUBJECT STUDENTS</p>';
-			echo '<p><input type=\'radio\' name=\'type\' value=\'class_students\' />CLASS STUDENTS</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'admin\' /><label>Admin</label></p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'subject_students\' /><label>Subject students</label></p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'class_students\' /><label>Class students</label></p>';
 		}
 		if ($sender_type == 'student') {
-			echo '<p><input type=\'radio\' name=\'type\' value=\'subject_teachers\' />SUBJECT TEACHER</p>';
-			echo '<p><input type=\'radio\' name=\'type\' value=\'class_teacher\' />CLASS TEACHER</p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'subject_teachers\' /><label>Subject teacher</label></p>';
+			$string .= '<p><input type=\'radio\' name=\'type\' value=\'class_teacher\' /><label>Class teacher</label></p>';
 		}
-		echo '<p><input type=\'submit\' name=\'send_mail_su\' value=\'SEND\' /></p>';
-		echo '</form>';
+		$string .= '<p><input type=\'submit\' name=\'send_mail_su\' value=\'Select\' /></p>';
+		$string .= '</form>';
+		return $string;
 	}
 	public function dec_form($type, $array = false) {
-		$role_array = array('PRINCIPAL', 'VICE PRINCIPAL', 'TEACHER', 'SECURITY', 'SANITARY PERSONEL', 'OTHERS');
-		$class_array = array('JSS 1', 'JSS 2', 'JSS 3', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE',
-		 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$role_array = ROLES;
+		$class_array = CLASSES;
 		if (isset($_POST['send_mail_su']) && !isset($_POST['type'])) {
-			$_SESSION['errors'] = 'PLEASE SELECT A TYPE.';
-			header('location: ./send_mail.php?pe='.$this->sender_type.'&me='.$this->sender_username);
+			$_SESSION['errors'] = ['Please select a type.'];
+			header('location: ./send_mail.php?pe='.base64_encode($this->sender_type).'&me='.base64_encode($this->sender_username));
 			die();
 		}
-		echo '<form method=\'post\' action=\'./sendmail.php?pe='.$this->sender_type.'&me='.$this->sender_username.'\' enctype=\'multipart/form-data\'>';
-		echo '<h4>CREATE MAIL:</h4>';
+		$string = '';
+		$string .=  '<form method=\'post\' action=\'./sendmail.php?pe='.base64_encode($this->sender_type).'&me='.base64_encode($this->sender_username).'\' enctype=\'multipart/form-data\' class=\'compose_mail\'>';
+		$string .=  '<h4>CREATE MAIL:</h4>';
 		switch ($_POST['type']) {
 			case 'staff_username':
-				echo '<p>STAFF\'S USERNAME(S): <input type=\'text\' name=\'receipient\' /></p>';
-				echo '<p><b>Separate usernames by comma if you want to send mail to more than one receipients.</b></p>';
+				$string .=  '<p><label>Staff\'s username(s) <span class=\'guidelines_icon mail_usernames\'>?</span>: </label><input type=\'text\' name=\'receipient\' /></p>';
 				break;
 			case 'staff_role':
-				echo '<p>STAFF(S) ROLE: <select name=\'receipient\'>';
-				echo '<option value=\'\'>---</option>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'staff_role\'>';
+				$string .=  '<p><label>Staff(s)\'s role: </label><select name=\'receipient\'>';
+				$string .=  '<option value=\'\'>---</option>';
 				foreach ($role_array as $role) {
-					echo '<option value=\''.$role.'\'>'.$role.'</option>';
+					$string .=  '<option value=\''.$role.'\'>'.$role.'</option>';
 				}
-				echo '</select>';
-				echo '</p>';
+				$string .=  '</select>';
+				$string .=  '</p>';
 				break;
 			case 'student_username':
-				echo '<p>STUDENT\'S USERNAME(S): <input type=\'text\' name=\'receipient\' /></p>';
-				echo '<p><b>Separate usernames by comma if you want to send mail to more than one receipients.</b></p>';
+				$string .=  '<p><label>Student\'s username(s) <span class=\'guidelines_icon mail_usernames\'>?</span>: </label><input type=\'text\' name=\'receipient\' /></p>';
 				break;
 			case 'student_class':
-				echo '<p>STUDENT(S) CLASS: <select name=\'receipient\'>';
-				echo '<option value=\'\'>---</option>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'student_class\'>';
+				$string .=  '<p><label>Student(s)\'s class: </label><select name=\'receipient\'>';
+				$string .=  '<option value=\'\'>---</option>';
 				foreach ($class_array as $class) {
-					echo '<option value=\''.$class.'\'>'.$class.'</option>';
+					$string .=  '<option value=\''.$class.'\'>'.$class.'</option>';
 				}
-				echo '</select>';
-				echo '</p>';
+				$string .=  '</select>';
+				$string .=  '</p>';
 				break;
 			case 'admin':
-				echo '<p>RECEIPIENT: ADMIN. <input type=\'hidden\' name=\'receipient\' value=\'admin\' /></p>';
+				$string .=  '<p><label>Receipient: ADMIN. </label><input type=\'hidden\' name=\'receipient\' value=\'admin\' /></p>';
 				break;
 			case 'subject_students':
-				echo '<p>CHOOSE CLASS: <select name=\'receipient\'>';
-				echo '<option value=\'\'>---</option>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'subject_students\'>';
+				$string .=  '<p><label>Choose subject: </label><select name=\'receipient\'>';
+				$string .=  '<option value=\'\'>---</option>';
 				foreach ($array as $class) {
-					echo '<option value=\''.$class.'\'>'.$class.'</option>';
+					$string .=  '<option value=\''.$class.'\'>'.$class.'</option>';
 				}
-				echo '</select>';
-				echo '</p>';
+				$string .=  '</select>';
+				$string .=  '</p>';
 				break;
 			case 'class_students':
-				echo '<p>CHOOSE CLASS: <select name=\'receipient\'>';
-				echo '<option value=\'\'>---</option>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'class_students\'>';
+				$string .=  '<p><label>Choose class: </label><select name=\'receipient\'>';
+				$string .=  '<option value=\'\'>---</option>';
 				foreach ($array as $class) {
-					echo '<option value=\''.$class.'\'>'.$class.'</option>';
+					$string .=  '<option value=\''.$class.'\'>'.$class.'</option>';
 				}
-				echo '</select>';
-				echo '</p>';
+				$string .=  '</select>';
+				$string .=  '</p>';
 				break;
 			case 'subject_teachers':
-				echo '<p>CHOOSE A TEACHER: <select name=\'receipient\'>';
-				echo '<option value=\'\'>---</option>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'subject_teacher\'>';
+				$string .=  '<p><label>Choose a teacher: </label><select name=\'receipient\'>';
+				$string .=  '<option value=\'\'>---</option>';
 				foreach ($array as $teacher) {
-					echo '<option value=\''.$teacher['teacher_username'].'\'>'.$teacher['teacher_name'].' '.$teacher['subject'].'</option>';
+					$string .=  '<option value=\''.$teacher['teacher_username'].'\'>'.$teacher['teacher_name'].' - '.$teacher['subject'].'</option>';
 				}
-				echo '</select>';
-				echo '</p>';
+				$string .=  '</select>';
+				$string .=  '</p>';
 				break;
 			case 'class_teacher':
-				echo '<p>RECEIPIENT: '.$array[1].'. <input type=\'hidden\' name=\'receipient\' value=\''.$array[0].'\' /></p>';
-				echo '</p>';
+				$string .=  '<input type=\'hidden\' name=\'regarding\' value=\'class_teacher\'>';
+				$string .=  '<p><label>Receipient: '.$array[1].'. </label><input type=\'hidden\' name=\'receipient\' value=\''.$array[0].'\' /></p>';
+				$string .=  '</p>';
 				break;
 			default:
 				// code...
 				break;
 		}
-		echo '<p>MAIL TITLE (optional): <input type=\'text\' name=\'mail_title\' /></p>';
-		echo '<p>MAIL: <textarea name=\'mail_message\' cols=\'40\' rows=\'10\'></textarea></p>';
-		echo '<p>APPEND FILE(S): <input type=\'file\' name=\'appendages[]\' multiple /></p>';
-		echo '<p>(Note: you can append up to three files but no single file must be more than 1 mb.)</p>';
-		echo '<input type=\'hidden\' name=\'type\' value=\''.$type.'\'>';
-		echo '<p><input type=\'submit\' name=\'send_mail\' value=\'SEND MAIL\' /></p>';
-		echo '</form>';
+		$string .=  '<p><label>Mail title (optional): </label><input type=\'text\' name=\'mail_title\' /></p>';
+		$string .=  '<p><label>Message: </label><textarea name=\'mail_message\'></textarea></p>';
+		$string .=  '<p><label>Append file(s) <span class=\'guidelines_icon appendage\'>?</span>: </label><input type=\'file\' name=\'appendages[]\' multiple /></p>';
+		$string .=  '<input type=\'hidden\' name=\'type\' value=\''.$type.'\'>';
+		$string .=  '<p><input type=\'submit\' name=\'send_mail\' value=\'Send mail\' /></p>';
+		$string .=  '</form>';
+		return $string;
 	}
 }
-class Dec_Add_Results {//declares form to add result
-	private $classes;
+class Dec_Add_Results {//declares form to add result   *****
+	private $class;
 	private $period;
-	public function __construct($classes, $period) {
-		$this->classes = $classes;
+	public function __construct($class, $period) {
+		$this->class = $class;
 		$this->period = $period;
 	}
 	public function dec_form() {
 		$res_types = array('1ST C.A. TEST', '2ND C.A. TEST', 'ASSIGNMENT', 'EXAMINATION'); 
 		echo '<form method=\'post\' action=\'./addresults.php\'>';
-		echo '<p>SESSION: '.$this->period['session'].'</p>';
-		echo '<p>TERM: '.$this->period['term'].'</p>';
-		echo '<p>SELECT A CLASS: <select name=\'subject_class\'>';
-		echo '<option value=\'\'>---</option>';
-		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
-		}
-		echo '</select></p>';
-		echo '<p>SELECT RESULT TYPE: <select name=\'result_type\'>';
+		echo '<p>Subject: '.$this->class.'</p>';
+		echo '<p>Session: '.$this->period['session'].'</p>';
+		echo '<p>Term: '.$this->period['term'].'</p>';
+		echo '<p>Select result type: <select name=\'result_type\'>';
 		echo '<option value=\'\'>---</option>';
 		foreach ($res_types as $type) {
 			echo '<option value=\''.$type.'\'>'.$type.'</option>';
@@ -691,7 +637,8 @@ class Dec_Add_Results {//declares form to add result
 		echo '</select></p>';
 		echo '<input type=\'hidden\' name=\'session\' value=\''.$this->period['session'].'\' />';
 		echo '<input type=\'hidden\' name=\'term\' value=\''.$this->period['term'].'\' />';
-		echo '<input type=\'submit\' name=\'add_res_sub\' value=\'ADD\' />';
+		echo '<input type=\'hidden\' name=\'subject_class\' value=\''.$this->class.'\' />';
+		echo '<input type=\'submit\' name=\'add_res_sub\' value=\'Add\' />';
 		echo '</form>';
 	}
 }
@@ -719,31 +666,29 @@ class Dec_Subjects_Registration {//declares form to register student
 	}
 }
 class Dec_View_Results {//declares form to view subject result
-	private $classes;
+	private $class;
 	private $period;
-	public function __construct($classes, $period) {
-		$this->classes = $classes;
+	public function __construct($class, $period) {
+		$this->class = $class;
 		$this->period = $period;
 	}
 	public function dec_form() {
+		$string = '';
 		$terms = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM'); 
-		echo '<form method=\'post\' action=\'./spreadsheets.php\'>';
-		echo '<p>SESSION: '.$this->period['session'].'</p>';
-		echo '<p>SELECT A CLASS: <select name=\'subject_class\'>';
-		echo '<option value=\'\'>---</option>';
-		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
-		}
-		echo '</select></p>';
-		echo '<p>SELECT TERM: <select name=\'term\'>';
-		echo '<option value=\'\'>---</option>';
+		$string .= '<form method=\'post\' action=\'./spreadsheets.php\'>';
+		$string .= '<p>Class: '.$this->class.'</p>';
+		$string .= '<p>Session: '.$this->period['session'].'</p>';
+		$string .= '<p>Select term: <select name=\'term\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($terms as $term) {
-			echo '<option value=\''.$term.'\'>'.$term.'</option>';
+			$string .= '<option value=\''.$term.'\'>'.$term.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$this->period['session'].'\' />';
-		echo '<input type=\'submit\' name=\'view_res_sub\' value=\'VIEW\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'session\' value=\''.$this->period['session'].'\' />';
+		$string .= '<input type=\'hidden\' name=\'subject_class\' value=\''.$this->class.'\' />';
+		$string .= '<input type=\'submit\' name=\'view_res_sub\' value=\'View\' />';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Classes_Results {//declares form to view class results
@@ -753,47 +698,40 @@ class Dec_Classes_Results {//declares form to view class results
 		$this->classes = $classes;
 		$this->period = $period;
 	}
-	public function dec_select_class() {
-		echo '<form method=\'post\' action=\'./class_results.php\'>';
-		echo '<p>SELECT A CLASS: <select name=\'class\'>';
-		echo '<option value=\'\'>---</option>';
-		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
-		}
-		echo '</select></p>';
-		echo '<input type=\'submit\' name=\'sel_class_sub\' value=\'SELECT\' />';
-		echo '</form>';
-	}
  	public function dec_select_subject($class, $subjects) {
- 		echo '<form method=\'post\' action=\'./class_results.php\'>';
-		echo '<p>SELECT A SUBJECT: <select name=\'subject\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+ 		$string .= '<form method=\'post\' action=\'./class_results.php\'>';
+		$string .= '<p>Select a subject: <select name=\'subject\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($subjects as $subject) {
-			echo '<option value=\''.$subject['subject'].'\'>'.strtoupper($subject['subject']).'</option>';
+			$string .= '<option value=\''.$subject['subject'].'\'>'.strtoupper($subject['subject']).'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$this->period['session'].'\' />';
-		echo '<input type=\'submit\' name=\'sel_subject_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
+		$string .= '<input type=\'hidden\' name=\'session\' value=\''.$this->period['session'].'\' />';
+		$string .= '<input type=\'submit\' name=\'sel_subject_sub\' value=\'Select\' />';
+		$string .= '</form>';
+		return $string;
  	}
  	public function dec_select_term($class, $subject, $session) {
+		$string = '';
  		$terms = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM');
- 		echo '<p>CLASS: '.$class.'.</p>';
- 		echo '<p>SUBJECT: '.strtoupper($subject).'.</p>';
- 		echo '<p>SESSION: '.$session.'.</p>';
- 		echo '<form method=\'post\' action=\'./spreadsheets.php\'>';
-		echo '<p>SELECT A TERM: <select name=\'term\'>';
-		echo '<option value=\'\'>---</option>';
+ 		$string .= '<p>Class: '.$class.'.</p>';
+ 		$string .= '<p>Subject: '.strtoupper($subject).'.</p>';
+ 		$string .= '<p>Session: '.$session.'.</p>';
+ 		$string .= '<form method=\'post\' action=\'./spreadsheets.php\'>';
+		$string .= '<p>Select a term: <select name=\'term\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($terms as $term) {
-			echo '<option value=\''.$term.'\'>'.$term.'</option>';
+			$string .= '<option value=\''.$term.'\'>'.$term.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
-		echo '<input type=\'hidden\' name=\'subject\' value=\''.$subject.'\' />';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$session.'\' />';
-		echo '<input type=\'submit\' name=\'sel_term_sub\' value=\'VIEW SPREADSHEET\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
+		$string .= '<input type=\'hidden\' name=\'subject\' value=\''.$subject.'\' />';
+		$string .= '<input type=\'hidden\' name=\'session\' value=\''.$session.'\' />';
+		$string .= '<input type=\'submit\' name=\'sel_term_sub\' value=\'View spreadsheet\' />';
+		$string .= '</form>';
+		return $string;
  	}
 }
 class Dec_Students_Results {//declares form to view class results
@@ -804,65 +742,69 @@ class Dec_Students_Results {//declares form to view class results
 		$this->period = $period;
 	}
 	public function dec_select_class() {
-		echo '<form method=\'post\' action=\'./student_results.php\'>';
-		echo '<p>SELECT A CLASS: <select name=\'class\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'./student_results.php\'>';
+		$string .= '<p>Select a class: <select name=\'class\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
+			$string .= '<option value=\''.$class.'\'>'.$class.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'submit\' name=\'sel_class_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'submit\' name=\'sel_class_sub\' value=\'Select\' />';
+		$string .= '</form>';
+		return $string;
 	}
  	public function dec_select_student($students, $class) {
- 		echo '<form method=\'post\' action=\'./student_results.php\'>';
-		echo '<p>SELECT A STUDENT: <select name=\'student\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+		$string .= '<table>';
+		$index = 0;
 		foreach ($students as $student) {
+			$string .= '<tr>';
+			$string .= '<td>'.++$index.'.</td>';
 			$name = $student['student_first_name'].' '.$student['student_last_name'];
-			echo '<option value=\''.$student['student_id'].'_'.$name.'\'>'.strtoupper($name).'</option>';
+			$string .= '<td>'.$name.'</td>';
+			$string .= '<td>';
+			$string .= '<form method=\'post\' action=\'./student_results.php\'>';
+			$string .= '<input type=\'hidden\' name=\'student\' value=\''.$student['student_id'].'_'.$name.'\' />';
+			$string .= '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
+			$string .= '<input type=\'submit\' name=\'sel_student_sub\' value=\'Select\' />';
+			$string .= '</form>';
+			$string .= '</td>';
+			$string .= '<tr>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
-		echo '<input type=\'submit\' name=\'sel_student_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</table>';
+		return $string;
  	}
- 	public function dec_select_session($student_id, $student_name, $sessions, $class) {
- 		echo '<form method=\'post\' action=\'./student_results.php\'>';
-		echo '<p>SELECT SESSION: <select name=\'session\'>';
-		echo '<option value=\'\'>---</option>';
+ 	public function dec_select_period($student_id, $student_name, $sessions, $class) {
+		$string = '';
+		$terms = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM');
+		$string .= '<form method=\'post\' action=\'./result.php\'>';
+		$string .= '<p>Student\'s name: '.$student_name.'.</p>';
+ 		$string .= '<p>Class: '.$class.'.</p>';
+		$string .= '<p>Select a session: <select name=\'session\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($sessions as $session) {
-			echo '<option value=\''.$session.'\'';
+			$string .= '<option value=\''.$session.'\'';
 			if ($this->period['session'] == $session) {
-				echo ' selected'; 
+				$string .= ' selected'; 
 			}
-			echo '>'.$session.'</option>';
+			$string .= '>'.$session.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
-		echo '<input type=\'hidden\' name=\'student_id\' value=\''.$student_id.'\' />';
-		echo '<input type=\'hidden\' name=\'student_name\' value=\''.$student_name.'\' />';
-		echo '<input type=\'submit\' name=\'sel_session_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<p>Select a term: <select name=\'term\'>';
+		$string .= '<option value=\'\'>---</option>';
+		foreach ($terms as $term) {
+			$string .= '<option value=\''.$term.'\'>'.$term.'</option>';
+		}
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
+		$string .= '<input type=\'hidden\' name=\'student_id\' value=\''.$student_id.'\' />';
+		$string .= '<input type=\'hidden\' name=\'student_name\' value=\''.$student_name.'\' />';
+		$string .= '<input type=\'submit\' name=\'sel_term_sub\' value=\'View result\' />';
+		$string .= '</form>';
+		return $string;
  	}
  	public function dec_select_sub_term($id, $name, $session, $class) {
- 		$terms = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM');
- 		echo '<p>STUDENT\'S NAME: '.$name.'.</p>';
- 		echo '<p>CLASS: '.$class.'.</p>';
- 		echo '<p>SESSION: '.$session.'.</p>';
- 		echo '<form method=\'post\' action=\'./result.php\'>';
-		echo '<p>SELECT A TERM: <select name=\'term\'>';
-		echo '<option value=\'\'>---</option>';
-		foreach ($terms as $term) {
-			echo '<option value=\''.$term.'\'>'.$term.'</option>';
-		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'student_id\' value=\''.$id.'\' />';
-		echo '<input type=\'hidden\' name=\'student_name\' value=\''.$name.'\' />';
-		echo '<input type=\'hidden\' name=\'class\' value=\''.$class.'\' />';
-		echo '<input type=\'hidden\' name=\'session\' value=\''.$session.'\' />';
-		echo '<input type=\'submit\' name=\'sel_term_sub\' value=\'VIEW RESULT\' />';
-		echo '</form>';
  	}
 }
 class Dec_Publish_Results {//declares form to publish results
@@ -871,15 +813,17 @@ class Dec_Publish_Results {//declares form to publish results
 		$this->classes = $classes;
 	}
 	public function dec_form() {
-		echo '<form method=\'post\' action=\'publishresults.php\'>';
-		echo '<p>SELECT A CLASS: <select name=\'class\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'publish_results.php\'>';
+		$string .= '<p>Select a class: <select name=\'class\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
+			$string .= '<option value=\''.$class.'\'>'.$class.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'submit\' name=\'pub_res_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'submit\' name=\'pub_res_sub\' value=\'Select\' />';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Authenticate_Publish {//declares form to authenticate publish results
@@ -901,15 +845,17 @@ class Dec_Take_Attendance {//declares form to take attendance
 		$this->classes = $classes;
 	}
 	public function dec_form() {
-		echo '<form method=\'post\' action=\'mark_attendance.php\'>';
-		echo '<p>SELECT A CLASS: <select name=\'class\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'take_attendance.php\'>';
+		$string .= '<p>Select a class: <select name=\'class\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
+			$string .= '<option value=\''.$class.'\'>'.$class.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'submit\' name=\'take_attend_sub\' value=\'SELECT\' />';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'submit\' name=\'take_attend_sub\' value=\'Select\' />';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Promote_Classes {
@@ -918,28 +864,44 @@ class Dec_Promote_Classes {
 		$this->promoted = $prom;
 	}
 	public function dec_form() {
-		$class_array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE', 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
-		$classes = array();
-		foreach ($class_array as $class) {
-			if (!in_array($class, $this->promoted) && !Database::check_unique_class_role($class, 'students')) {
-				$classes[] = $class;
+		$string = '';
+		$class_array = CLASSES;
+		$order = ['SSS 3', 'SSS 2', 'SSS 1', 'JSS 3', 'JSS 2', 'JSS 1'];
+		$valid_for_promotion = [];
+		for ($i = 0; $i < count($order); $i++) {
+			$highest = $order[$i];
+			$classes = [];
+			$all_of_class = 0;
+			$all_of_class_promoted = 0;
+			foreach ($class_array as $class) {
+				if (preg_match('/^'.$highest.'.*/', $class, $classes)) {
+					array_push($valid_for_promotion, $classes[0]);
+					if (!Database::check_unique_class_role($class, 'students')) $all_of_class++;
+				}
 			}
+			foreach ($this->promoted as $class) {
+				if (preg_match('/^'.$highest.'/', $class)) {
+					$all_of_class_promoted++;
+				}
+			}
+			if ($all_of_class_promoted < $all_of_class) break;
 		}
-		echo '<form method=\'post\' action=\'./promote_studentsx.php\'>';
-		echo '<p>NOTE THAT CLASSES ARE PROMOTED IN DESCENDING ORDER. THEREFORE, SSS 3 SHOULD/MUST BE PROMOTED BEFORE SSS 2 AND SSS 2 BEFORE SSS 1 AND SO ON.</p>';
-		echo '<p><select name=\'class\'>';
-		foreach ($class_array as $class) {
-			echo '<option value=\''.$class.'\'>'.$class;
+		$string .= '<form method=\'post\' action=\'./promote_students.php\'>';
+		$string .= '<p><em>Note that classes should be promoted in descending order, i.e all SSS 3 classes have to be promoted before any other lower class...</em></p>';
+		$string .= '<p><select name=\'class\'>';
+		foreach ($valid_for_promotion as $class) {
+			$string .= '<option value=\''.$class.'\'>'.$class;
 			if (in_array($class, $this->promoted)) {
-				echo '- promoted';
+				$string .= ' -- PROMOTED';
 			} else {
-				echo '- not promoted';
+				$string .= ' -- NOT PROMOTED';
 			}
-			echo '</option>';
+			$string .= '</option>';
 		}
-		echo '</select>';
-		echo '<p><input type=\'submit\' name=\'promote_sub\' value=\'SELECT\' /></p>';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<p><input type=\'submit\' name=\'promote_sub\' value=\'Select\' /></p>';
+		$string .= '</form>';
+		return $string;
 	}
 }
 class Dec_Select_View_Student {
@@ -967,7 +929,7 @@ class Dec_Select_View_Student {
 			echo '<option value=\''.$student['student_id'].'\'>'.$name.'</option>';
 		}
 		echo '</select></p>';
-		echo '<p><input type=\'submit\' name=\'sel_student_sub\' value=\'SELECT\' /></p>';
+		echo '<p><input type=\'submit\' name=\'sel_student_sub\' value=\'Select\' /></p>';
 		echo '</form>';
 	}
 }
@@ -975,38 +937,40 @@ class Dec_Select_Result_Period {
 	private $id;
 	private $sessions;
 	private $period;
-	private $passport;
-	public function __construct($id, $sess, $period, $passport) {
+	private $class;
+	public function __construct($id, $sess, $period, $class) {
 		$this->id = $id;
 		$this->sessions = $sess;
 		$this->period = $period;
-		$this->passport = $passport;
+		$this->class = $class;
 	}
 	public function dec_form() {
+		$string = '';
 		$terms = array('FIRST TERM', 'SECOND TERM', 'THIRD TERM'); 
-		echo '<div>';
-		echo '<form method=\'post\' action=\'./result.php\'>';
-		echo '<p>SELECT A SESSION: <select name=\'session\'>';
-		echo '<option value=\'\'>---</option>';
+		$string .= '<div>';
+		$string .= '<form method=\'post\' action=\'./result.php\'>';
+		$string .= '<p>Select a session: <select name=\'session\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($this->sessions as $session) {
-			echo '<option value=\''.$session.'\' ';
-			if ($session == $this->period['session']) echo 'selected';
-			echo '>'.$session.'</option>';
+			$string .= '<option value=\''.$session.'\' ';
+			if ($session == $this->period['session']) $string .= 'selected';
+			$string .= '>'.$session.'</option>';
 		}
-		echo '</select></p>';
-		echo '<p>SELECT A TERM: <select name=\'term\'>';
-		echo '<option value=\'\'>---</option>';
+		$string .= '</select></p>';
+		$string .= '<p>Select a term: <select name=\'term\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($terms as $term) {
-			echo '<option value=\''.$term.'\' ';
-			if ($term == $this->period['term']) echo 'selected';
-			echo '>'.$term.'</option>';
+			$string .= '<option value=\''.$term.'\' ';
+			if ($term == $this->period['term']) $string .= 'selected';
+			$string .= '>'.$term.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'student_id\' value=\''.$this->id.'\' />';
-		echo '<input type=\'hidden\' name=\'student_passport\' value=\''.$this->passport.'\' />';
-		echo '<p><input type=\'submit\' name=\'sel_period_sub\' value=\'CHECK RESULT\' /></p>';
-		echo '</form>';
-		echo '</div>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'student_id\' value=\''.$this->id.'\' />';
+		$string .= '<input type=\'hidden\' name=\'student_class\' value=\''.$this->class.'\' />';
+		$string .= '<p><input type=\'submit\' name=\'sel_period_sub\' value=\'Check result\' /></p>';
+		$string .= '</form>';
+		$string .= '</div>';
+		return $string;
 	}
 }
 class Dec_Write_Comments {
@@ -1017,20 +981,33 @@ class Dec_Write_Comments {
 		if ($this->type == 'class_teacher') {
 			$this->classes = $classes;
 		} else {
-			$this->classes = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE', 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+			$this->classes = CLASSES;
 		}
 	}
 	public function dec_select_class() {
-		echo '<form method=\'post\' action=\'./write_comments.php\'>';
-		echo '<p>SELECT A CLASS: <select name=\'class\'>';
-		echo '<option value=\'\'>---</option>';
+		$string = '';
+		$string .= '<form method=\'post\' action=\'./write_comments.php\'>';
+		$string .= '<p>Select a class: <select name=\'class\'>';
+		$string .= '<option value=\'\'>---</option>';
 		foreach ($this->classes as $class) {
-			echo '<option value=\''.$class.'\'>'.$class.'</option>';
+			$string .= '<option value=\''.$class.'\'>'.$class.'</option>';
 		}
-		echo '</select></p>';
-		echo '<input type=\'hidden\' name=\'type\' value=\''.$this->type.'\' />';
-		echo '<p><input type=\'submit\' name=\'sel_class_sub\' value=\'SELECT\' /></p>';
-		echo '</form>';
+		$string .= '</select></p>';
+		$string .= '<input type=\'hidden\' name=\'type\' value=\''.$this->type.'\' />';
+		$string .= '<p><input type=\'submit\' name=\'sel_class_sub\' value=\'Select\' /></p>';
+		$string .= '</form>';
+		return $string;
 	}
+}
+
+
+// parses text for rendering
+function evaluateText(string $text) : string {
+	$array = preg_split('/\n/', $text);
+	$string = '';
+	foreach ($array as $paragraph) {
+		$string .= '<p>'.$paragraph.'</p>';
+	}
+	return $string;
 }
 ?>

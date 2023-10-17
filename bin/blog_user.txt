@@ -1,0 +1,2 @@
+username = blog_user
+password = fpcblog_user

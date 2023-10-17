@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* @supports (column-width: 200px) {body {background-color: red;}} */
+        div {
+            width: 200px;
+            height: 200px;
+            background-color: black;
+            margin: auto;
+            position: absolute;
+            top: 40%;
+            left: 40%;
+            overflow: auto;
+            transition: 5s;
+        }
+        span {
+            display: block;
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top: 100%;
+            left: 20%;
+            overflow: auto;
+            background-color: white;
+            border: 1px solid red;
+            transition: 5s;
+        }
+        div article {
+            width: 20%;
+            height: 40px;
+            background-color: wheat;
+            position: absolute;
+            top: 300%;
+        }
+    </style>
+</head>
+<body>
+    <h1>welcome to support</h1><article></article>
+    <div>content is not empty<span>here is the span</span><article></article></div>
+    <noscript>js is disabled</noscript>
+</body>
+<script>
+    function scrollE(time, ele) {
+        scrollE.lastTime = scrollE.lastTime || time;
+        if (ele.scrollTop < document.querySelector('span').offsetTop) {
+            document.querySelector('article').textContent = `time dif is : ${time - scrollE.lastTime}`;
+            console.log(time - scrollE.lastTime)
+            ele.scrollTop += 9;
+            ele.scrollTop = ele.scrollTop >= document.querySelector('span').offsetTop ? document.querySelector('span').offsetTop : ele.scrollTop;
+            scrollE.lastTime = time;
+            id = requestAnimationFrame(function (e) {scrollE(e, document.querySelector('div'))});
+        } else {
+            cancelAnimationFrame(id);
+        }
+    }
+    let id = requestAnimationFrame(function (e) {scrollE(e, document.querySelector('div'))});
+</script>
+</html>

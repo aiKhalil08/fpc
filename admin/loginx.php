@@ -1,8 +1,8 @@
 <?php
 require_once '../bin/start_session.php';
 require '../bin/contr.php';
-//require '../bin/errorlib.php';
-$login = @new AdminLogin($_POST['admin_username'], $_POST['admin_password']);
+check_request(false, './login.php');
+$login = @new AdminLogin($_POST['admin_username'], $_POST['admin_password']);//declared in contr.php
 try {
 	$login->admin_login();
 } catch (CustomException $e) {

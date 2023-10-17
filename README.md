@@ -1,2 +1,0 @@
-# fpc
- a school portal

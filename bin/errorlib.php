@@ -83,19 +83,15 @@ function default_exception_handler($exception) {
 	 } 
 }
 function handle_session_errors() {
-	if ($_SESSION) {
-		foreach ($_SESSION as $key) {
-			if (is_array($key)) {
-				for ($i = 0; $i < sizeof($key); $i++) { 
-					echo '<div class=\'login_errors\'>'.@$key[$i].'</div>';
-				}
-			} else {
-				echo '<div class=\'login_errors\'>'.@$key.'</div>';
-			}
+	if (array_key_exists('errors', $_SESSION)) {
+		$string = '<article class=\'errors\'>';
+		$string .= '<p>Please address the following issues:</p><ul>';
+		foreach ($_SESSION['errors'] as $key => $value) { 
+			$string .= '<li>'.@$value.'</li>';
 		}
-		foreach ($_SESSION as $key => $value) {
-			unset($_SESSION[$key]);
-		}
+		$string .= '</ul></article>';
+		unset($_SESSION['errors']);
+		return $string;
 	}
 }
 ?>

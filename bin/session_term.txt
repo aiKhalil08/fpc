@@ -1,2 +1,3 @@
-session = 2022/2023
-term = FIRST TERM
+session = 2030/2031
+term = SECOND TERM
+start_date = 2022-11-03

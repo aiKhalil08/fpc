@@ -1,8 +1,12 @@
 <?php
+if (!$_REQUEST['id'] || !$_REQUEST['type']) {
+	header('location: ../index.php');
+	die();
+}
 $id = trim($_GET['id']);
 $type = $_GET['type'];
 $file = '../bin/mails/appendages/'.$id.'.'.$type;
-if ($type == 'png' || $type == 'jpeg' || $type == 'gif') {
+if ($type == 'png' || $type == 'jpeg' || $type == 'jpg' || $type == 'gif') {
 	$content_type = 'image/'.$type;
 } else if ($type == 'mp3') {
 	$content_type = 'audio/'.$type;

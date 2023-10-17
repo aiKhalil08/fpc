@@ -2,6 +2,7 @@
 require_once '../bin/start_session.php';
 require '../bin/modellib.php';
 require '../bin/errorlib.php';
+require '../bin/classes_roles.php';
 //the following class sets input errors and the error session
 class Error_Reg {
 	public static $errors = array();
@@ -28,8 +29,17 @@ class AdminLogin {
 		$this->password = $password;
 	}
 	private function parse_input() {//parses inputted username and password
-		$this->username = trim($this->username);
-		$this->password = trim($this->password);
+		if (empty(trim($this->username))) {
+			Error_Reg::set_errors('Empty username field.');
+		}
+		if (empty(trim($this->password))) {
+			Error_Reg::set_errors('Empty password field.');
+		}
+		if (sizeof(Error_Reg::$errors) > 0) {
+			Error_Reg::set_err_session();
+			header('location: ./login.php');
+			die();
+		}
 	}
 	private function get_modellib($username, $password) {//returns an object of modellib
 		return new Mod_AdminLogin($username, $password);
@@ -39,16 +49,7 @@ class AdminLogin {
 		$validate->mod_admin_validate();
 	}
 	public function admin_login() {//contains all login function. called in loginx.php
-		if (!empty($this->username)) {
-			if (!empty($this->password)) {
-				$this->parse_input();
-			} else {
-				throw new CustomException(debug_backtrace(),'EMPTY PASSWORD FIELD');
-			}
-		} else {
-			throw new CustomException(debug_backtrace(),'EMPTY USERNAME FIELD');
-			
-		}
+		$this->parse_input();
 		$this->validate($this->username, $this->password);
 	}
 }
@@ -63,10 +64,10 @@ class St_Login {
 	}
 	private function parse_input() {
 		if ($this->username == '' || $this->password == '') {
-			Error_Reg::set_errors('PLEASE FILL ALL FIELDS.');
+			Error_Reg::set_errors('Please fill all fields.');
 		}
 		if (Database::check_unique_username($this->username, $this->type.'s')) {
-			Error_Reg::set_errors('USERNAME DOES NOT EXIST.');
+			Error_Reg::set_errors('Username does not exist.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -121,33 +122,29 @@ class Addst {//adds or edits students' basic info
 			$table_type = 'staffs';
 		}
 		if ($this->first_name == '' || $this->last_name == '' || $this->class_role == '' || $this->username == '') {
-			Error_Reg::set_errors('ALL FIELDS MUST BE FILLED.');
+			Error_Reg::set_errors('All fields must be filled.');
 		}
 		if (preg_match('/[0-9]/', $this->first_name) || strpos($this->first_name, ' ')) {
-			Error_Reg::set_errors($type.'\'S FIRST NAME MUST ONLY CONTAIN LETTERS.');
+			Error_Reg::set_errors('S'.strtolower(substr($type, 1)).'\'s first name must only contain letters.');
 		}
 		if (strlen($this->first_name) > 20) {
-			Error_Reg::set_errors($type.'\'S FIRST NAME MUST NOT BE MORE THAN 20 LETTERS.');
+			Error_Reg::set_errors('S'.strtolower(substr($type, 1)).'\'s first name must not be more than 20 letters.');
 		}
 		if (preg_match('/[0-9]/', $this->last_name) || strpos($this->last_name, ' ')) {
-			Error_Reg::set_errors($type.'\'S LAST NAME MUST ONLY CONTAIN LETTERS.');
+			Error_Reg::set_errors('S'.strtolower(substr($type, 1)).'\'s last name must only contain letters.');
 		}
 		if (strlen($this->last_name) > 25) {
-			Error_Reg::set_errors($type.'\'S LAST NAME MUST NOT BE MORE THAN 25 LETTERS.');
+			Error_Reg::set_errors('S'.strtolower(substr($type, 1)).'\'s last name must not be more than 25 letters.');
 		}
 		if (strlen($this->username) > 12) {
-			Error_Reg::set_errors($type.'\'S USERNAME MUST NOT BE MORE THAN 12 LETTERS.');
+			Error_Reg::set_errors('S'.strtolower(substr($type, 1)).'\'s username must not be more than 12 letters.');
 		}
 		if (!Error_Reg::check_username($this->username, $table_type) && $this->existing == false) {
-			Error_Reg::set_errors('A '.$type.' WITH THIS USERNAME ALREADY EXISTS.');
+			Error_Reg::set_errors('A '.strtolower($type).' with this username already exists.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			if ($this->type == 'student') {
-				$location = 'location: ./addstudent.php';
-			} else if ($this->type == 'staff') {
-				$location = 'location: ./addstaff.php';
-			}
+			$location = !$this->id ? 'location: ./add'.$this->type.'.php' : 'location: ./add'.$this->type.'.php?id='.$this->id;
 			header($location);
 			die();
 		}
@@ -158,13 +155,9 @@ class Addst {//adds or edits students' basic info
 			$add->mod_add_st();
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			if ($this->type == 'student') {
-				$location = 'location: ./addstudent.php';
-			} else if ($this->type == 'staff') {
-				$location = 'location: ./addstaff.php';
-			}
+			$location = !$this->id ? 'location: ./add'.$this->type.'.php' : 'location: ./add'.$this->type.'.php?id='.$this->id;
 			header($location);
 			die();
 		}
@@ -206,8 +199,7 @@ class Editstudent_bio extends Editst {
 	}
 	private function parse_input() {//checks if all inouts are legal
 		$type = 'STUDENT';
-		if ($this->student_id == '' 
-			|| $this->parent_name == '' 
+		if ($this->parent_name == '' 
 			|| $this->parent_phone == ''
 			|| $this->student_dob == ''
 			|| $this->student_address == ''
@@ -215,56 +207,75 @@ class Editstudent_bio extends Editst {
 			|| $this->student_gender == ''
 			|| $this->student_religion == ''
 		) {
-			Error_Reg::set_errors('ALL FIELDS MUST BE FILLED.');
+			Error_Reg::set_errors('All fields must be filled.');
 		}
-		if (!Parent::check_id($this->student_id, 'students_bio') && $this->existing == false) {
-			Error_Reg::set_errors('BIO FOR THIS '.$type.' ALREADY EXISTS.');
+		if (!$this->existing && empty($this->student_passport['name'])) {
+			Error_Reg::set_errors('Please select a passport.');
 		}
-		if (Parent::check_id($this->student_id, 'students')) {
-			Error_Reg::set_errors($type.' DOES NOT EXIST.');
+		if ($this->existing == true && Parent::check_id($this->student_id, 'students')) {
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s does not exist.');
 		}
 		if (strlen($this->parent_name) > 45) {
-			Error_Reg::set_errors('PARENT\'S NAME MUST NOT BE MORE THAN 45 CHARACTERS.');	
+			Error_Reg::set_errors('Parent\'s name must not be more than 45 characters.');	
 		}
 		if (preg_match('/[0-9]/', $this->parent_name)) {
-			Error_Reg::set_errors('PARENT\'S NAME MUST ONLY CONTAIN LETTERS.');	
+			Error_Reg::set_errors('Parent\'s name must only contain letters.');	
 		}
 		if (strlen($this->parent_phone) > 14) {
-			Error_Reg::set_errors('PARENT\'S PHONE NUMBER MUST NOT BE MORE THAN 14 CHARACTERS.');	
+			Error_Reg::set_errors('Parent\'s phone number must not be more than 14 characters.');	
 		}
 		if (preg_match('/[a-z]/i', $this->parent_phone)) {
-			Error_Reg::set_errors('PARENT\'S PHONE NUMBER MUST ONLY CONTAIN DIGITS.');	
-		}
-		if (strlen($this->parent_email) > 35) {
-			Error_Reg::set_errors('PARENT\'S EMAIL MUST NOT BE MORE THAN 35 CHARACTERS.');	
-		}
-		if ($this->parent_email != '' && !preg_match('/@/', $this->parent_email)) {
-			Error_Reg::set_errors('PLEASE INPUT A VALID EMAIL ADDRESS.');
+			Error_Reg::set_errors('Parent\'s phone number must only contain digits.');	
 		}
 		if (preg_match('/[a-z]/i', $this->student_dob)) {
-			Error_Reg::set_errors('PLEASE INPUT A VALID DATE.');	
+			Error_Reg::set_errors('Please input a valid date of birth.');	
+		}
+		
+		list($year, $month, $day) = preg_split('/[^\d]/', $this->student_dob);
+		$invalid_date = false;
+		if (strlen($year) != 4 || !in_array(strlen($month), [1, 2]) || !in_array(strlen($day), [1, 2])) {
+			$invalid_date = true;
+		}
+		if (!in_array($month, range(1,12))) $invalid_date = true;
+		if ((in_array($month, [1,3,5,7,8,10,12]) && !in_array($day, range(1, 31))) || (in_array($month, [4,6,9,11]) && !in_array($day, range(1, 30))) || ($month == 2 && !in_array($day, range(1, 29)))) {
+			$invalid_date = true;
+		}
+		if ($invalid_date) {
+			Error_Reg::set_errors('Please enter a valid date of birth.');	
+		}
+
+		if (strlen($this->parent_email) > 35) {
+			Error_Reg::set_errors('Parent\'s email must not be more than 35 characters.');	
+		}
+		if ($this->parent_email != '' && !preg_match('/@/', $this->parent_email)) {
+			Error_Reg::set_errors('Please input a valid email address.');
+		}
+		if (preg_match('/[a-z]/i', $this->student_dob)) {
+			Error_Reg::set_errors('Please input a valid date.');	
 		}
 		if (strlen($this->student_address) > 100) {
-			Error_Reg::set_errors($type.'\'S ADDRESS MUST NOT BE MORE THAN 100 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s address must not be more than 100 characters.');	
 		}
 		if (strlen($this->student_storg) > 12) {
-			Error_Reg::set_errors($type.'\'S STATE OF ORIGIN MUST NOT BE MORE THAN 12 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s state of origin must not be more than 12.');	
 		}
-		if (pathinfo($this->student_passport['name'], PATHINFO_EXTENSION) !== 'png' 
-			&& pathinfo($this->student_passport['name'], PATHINFO_EXTENSION) !== 'jpg') {
-			Error_Reg::set_errors('PASSPORT MUST ONLY BE PNG OR JPG.');
+		if (!empty($this->student_passport['name']) && pathinfo($this->student_passport['name'], PATHINFO_EXTENSION) !== 'jpg') {
+			Error_Reg::set_errors('Passport must only be jpg.');
 		}
-		if ($this->student_passport['size'] > 150000) {
-			Error_Reg::set_errors('SIZE OF PASSPORT MUST NOT BE MORE THAN 150KB.');	
+		if (!empty($this->student_passport['name']) && $this->student_passport['size'] > 1500000) {
+			Error_Reg::set_errors('Size of passport must not be larger than 1.5MB');	
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			header('location: ./edit_bio.php?pe=tn&id='.$this->student_id);
+			header('location: ./edit_bio.php?pe=tn');
 			die();
 		}
 	}
 	private function add_to_table() {//connects to Model library
 		try {
+			if (!$this->existing) {
+				$this->student_id = Database::check_unique_username($_SESSION['basic_info']['student_username'], 'students', 1)['student_id'];
+			}
 			$edit_bio = new Mod_Editstudent_Bio(
 			$this->student_id, 
 			$this->parent_name, 
@@ -281,14 +292,22 @@ class Editstudent_bio extends Editst {
 			$edit_bio->mod_edit_bio();
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			header('location: ./edit_bio.php?pe=tn&id='.$this->student_id);
+			header('location: ./edit_bio.php?pe=tn');
 			die();
 		}
 	}
 	public function edit_bio() {//amalgamates all function. called in editst.php
 		$this->parse_input();
+		$fname = $_SESSION['basic_info']['student_first_name'];
+		$lname = $_SESSION['basic_info']['student_last_name'];
+		$class_role = $_SESSION['basic_info']['student_class'];
+		$uname = $_SESSION['basic_info']['student_username'];
+		$existing = $_SESSION['basic_info']['existing'] ? true : false;
+		$id = $_SESSION['basic_info']['id'] ? $_SESSION['basic_info']['id'] : false;
+		$add = new AddSt('student', $fname, $lname, $uname, $class_role, $existing, $id);//declared in contr.php
+		$add->add_st();
 		$this->add_to_table();	
 	}
 }
@@ -321,8 +340,7 @@ class Editstaff_bio extends Editst {
 	}
 	private function parse_input() {//checks if all inouts are legal
 		$type = 'STAFF';
-		if ($this->staff_id == '' 
-			|| $this->staff_phone == '' 
+		if ($this->staff_phone == '' 
 			|| $this->staff_email == ''
 			|| $this->staff_dob == ''
 			|| $this->nok_name == ''
@@ -332,62 +350,78 @@ class Editstaff_bio extends Editst {
 			|| $this->staff_gender == ''
 			|| $this->staff_religion == ''
 		) {
-			Error_Reg::set_errors('ALL FIELDS MUST BE FILLED.');
+			Error_Reg::set_errors('All fields must be filled.');
 		}
-		if (!Parent::check_id($this->staff_id, 'staffs_bio') && $this->existing == false) {
-			Error_Reg::set_errors('BIO FOR THIS '.$type.' ALREADY EXISTS.');
+		if (!$this->existing && empty($this->staff_passport['name'])) {
+			Error_Reg::set_errors('Please select a passport.');
 		}
-		if (Parent::check_id($this->staff_id, 'staffs')) {
-			Error_Reg::set_errors($type.' DOES NOT EXIST.');
+		if ($this->existing == true && Parent::check_id($this->staff_id, 'staffs')) {
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).' does not exist.');
 		}
 		if (strlen($this->nok_name) > 45) {
-			Error_Reg::set_errors('NEXT OF KIN\'S NAME MUST NOT BE MORE THAN 45 CHARACTERS.');	
+			Error_Reg::set_errors('Next of kin\'s name must not be more than 45 characters.');	
 		}
 		if (preg_match('/[0-9]/', $this->nok_name)) {
-			Error_Reg::set_errors('NEXT OF KIN\'S NAME MUST ONLY CONTAIN LETTERS.');	
+			Error_Reg::set_errors('Next of kin\'s name must only contain letters.');	
 		}
 		if (strlen($this->staff_phone) > 14) {
-			Error_Reg::set_errors($type.'\'S PHONE NUMBER MUST NOT BE MORE THAN 14 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s phone number must not be more than 14 characters.');	
 		}
 		if (strlen($this->nok_phone) > 14) {
-			Error_Reg::set_errors('NEXT OF KIN\'S PHONE NUMBER MUST NOT BE MORE THAN 14 CHARACTERS.');	
+			Error_Reg::set_errors('Next of kin\'s phone number must only contain digits.');	
 		}
 		if (preg_match('/[a-z]/i', $this->staff_phone)) {
-			Error_Reg::set_errors($type.'\'S PHONE NUMBER MUST ONLY CONTAIN DIGITS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s phone number must only contain digits.');	
 		}
 		if (preg_match('/[a-z]/i', $this->nok_phone)) {
-			Error_Reg::set_errors('NEXT OF KIN\'S PHONE NUMBER MUST ONLY CONTAIN DIGITS.');	
+			Error_Reg::set_errors('Next of kin\'s phone number must only contain digits.');	
 		}
 		if (strlen($this->staff_email) > 35) {
-			Error_Reg::set_errors($type.'\'S EMAIL MUST NOT BE MORE THAN 35 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s email address must not be more than 35 characters.');	
 		}
 		if ($this->staff_email != '' && !preg_match('/@/', $this->staff_email)) {
-			Error_Reg::set_errors('PLEASE INPUT A VALID EMAIL ADDRESS.');
+			Error_Reg::set_errors('Please input a valid email address.');
 		}
 		if (preg_match('/[a-z]/i', $this->staff_dob)) {
-			Error_Reg::set_errors('PLEASE INPUT A VALID DATE.');	
+			Error_Reg::set_errors('Please input a valid date of birth.');	
 		}
+
+		list($year, $month, $day) = preg_split('/[^\d]/', $this->staff_dob);
+		$invalid_date = false;
+		if (strlen($year) != 4 || !in_array(strlen($month), [1, 2]) || !in_array(strlen($day), [1, 2])) {
+			$invalid_date = true;
+		}
+		if (!in_array($month, range(1,12))) $invalid_date = true;
+		if ((in_array($month, [1,3,5,7,8,10,12]) && !in_array($day, range(1, 31))) || (in_array($month, [4,6,9,11]) && !in_array($day, range(1, 30))) || ($month == 2 && !in_array($day, range(1, 29)))) {
+			$invalid_date = true;
+		}
+		if ($invalid_date) {
+			Error_Reg::set_errors('Please enter a valid date of birth.');	
+		}
+
 		if (strlen($this->staff_address) > 100) {
-			Error_Reg::set_errors($type.'\'S ADDRESS MUST NOT BE MORE THAN 100 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s address must not be more than 100 characters.');	
 		}
 		if (strlen($this->staff_storg) > 12) {
-			Error_Reg::set_errors($type.'\'S STATE OF ORIGIN MUST NOT BE MORE THAN 12 CHARACTERS.');	
+			Error_Reg::set_errors('S'.substr(strtolower($type), 1).'\'s state of origin must not be more than 12 characters.');	
 		}
-		if (pathinfo($this->staff_passport['name'], PATHINFO_EXTENSION) !== 'png' 
-			&& pathinfo($this->staff_passport['name'], PATHINFO_EXTENSION) !== 'jpg') {
-			Error_Reg::set_errors('PASSPORT MUST ONLY BE PNG OR JPG.');
+		if (!empty($this->staff_passport['name']) && pathinfo($this->staff_passport['name'], PATHINFO_EXTENSION) !== 'jpg') {
+			Error_Reg::set_errors('Passport must only be jpg.');
 		}
-		if ($this->staff_passport['size'] > 150000) {
-			Error_Reg::set_errors('SIZE OF PASSPORT MUST NOT BE MORE THAN 150KB.');	
+		if (!empty($this->staff_passport['name']) && $this->staff_passport['size'] > 1500000) {
+			Error_Reg::set_errors('Size of passport must not be larger than 1.5MB.');	
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			header('location: ./edit_bio.php?pe=fa&id='.$this->staff_id);
+			header('location: ./edit_bio.php?pe=fa');
 			die();
 		}
 	}
 	private function add_to_table() {//connects to Model library
 		try {
+			if (!$this->existing) {
+				$this->staff_id = Database::check_unique_username($_SESSION['basic_info']['staff_username'], 'staffs', 1)['staff_id'];
+			}
 			$edit_bio = new Mod_Editstaff_Bio(
 			$this->staff_id, 
 			$this->staff_phone, 
@@ -405,14 +439,22 @@ class Editstaff_bio extends Editst {
 			$edit_bio->mod_edit_bio();
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			header('location: ./edit_bio.php?pe=fa&id='.$this->staff_id);
+			header('location: ./edit_bio.php?pe=fa');
 			die();
 		}
 	}
 	public function edit_bio() {//amalgamates all function. called in editst.php
 		$this->parse_input();
+		$fname = $_SESSION['basic_info']['staff_first_name'];
+		$lname = $_SESSION['basic_info']['staff_last_name'];
+		$class_role = $_SESSION['basic_info']['staff_role'];
+		$uname = $_SESSION['basic_info']['staff_username'];
+		$existing = $_SESSION['basic_info']['existing'] ? true : false;
+		$id = $_SESSION['basic_info']['id'] ? $_SESSION['basic_info']['id'] : false;
+		$add = new AddSt('staff', $fname, $lname, $uname, $class_role, $existing, $id);//declared in contr.php
+		$add->add_st();
 		$this->add_to_table();	
 	}
 }
@@ -638,7 +680,7 @@ class Read_Sessions {
 			return XML::get_sessions_for_student($this->student_id);
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = $_SERVER['HTTP_REFERER'];
 			header('location: '.$location);
@@ -658,25 +700,11 @@ class Search_St {
 	}
 	private function parse_input() {
 		if ($this->input == '') {
-			Error_Reg::set_errors('PLEASE FILL THE SEARCH FIELD.');
+			Error_Reg::set_errors('Please fill all fields.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			if ($this->type == 'student') {
-				if ($this->method == 'class_role') {
-					$method = 'lc';
-				} else if ($this->method == 'surname') {
-					$method = 'us';
-				}
-				$location = './search_student.php?method='.$method;
-			} else if ($this->type == 'staff') {
-				if ($this->method == 'class_role') {
-					$method = 'or';
-				} else if ($this->method == 'surname') {
-					$method = 'us';
-				}
-				$location = './search_staff.php?method='.$method;
-			}
+			$location = $this->type == 'student' ? './search_student.php' : './search_staff.php';
 			header('location: '.$location);
 			die();
 		}
@@ -687,23 +715,9 @@ class Search_St {
 			return $search->mod_search();
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			if ($this->type == 'student') {
-				if ($this->method == 'class_role') {
-					$method = 'lc';
-				} else if ($this->method == 'surname') {
-					$method = 'us';
-				}
-				$location = './search_student.php?method='.$method;
-			} else if ($this->type == 'staff') {
-				if ($this->method == 'class_role') {
-					$method = 'or';
-				} else if ($this->method == 'surname') {
-					$method = 'us';
-				}
-				$location = './search_staff.php?method='.$method;
-			}
+			$location = $this->type == 'student' ? './search_student.php' : './search_staff.php';
 			header('location: '.$location);
 			die();
 		}
@@ -724,10 +738,16 @@ class Delete_St {
 	}
 	private function parse_input() {
 		if ($this->input == '') {
-			Error_Reg::set_errors('PLEASE FILL ALL FIELDS.');
-		}
-		if (Error_Reg::check_username($this->input, $this->type.'s')) {
-			Error_Reg::set_errors('USERNAME DOES NOT EXIST.');
+			Error_Reg::set_errors('Please fill all fields.');
+		} else {$this->explode_input();}
+		if ($this->multiple) {
+			foreach ($this->input as $input) {
+				if (Error_Reg::check_username($input, $this->type.'s')) {
+					Error_Reg::set_errors('Username does not exist.');
+				}
+			}
+		} else if (Error_Reg::check_username($this->input, $this->type.'s')) {
+			Error_Reg::set_errors('Username does not exist.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -741,6 +761,7 @@ class Delete_St {
 		}
 	}
 	private function explode_input() {
+		$this->input = trim($this->input);
 		if (stripos($this->input, ',')) {
 			$this->input = explode(',', $this->input);
 			for ($i = 0; $i < sizeof($this->input); $i++) { 
@@ -755,7 +776,7 @@ class Delete_St {
 			$delete->mod_delete();
 		} catch(CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			if ($this->type == 'student') {
 				$location = './delete_student.php';
@@ -768,7 +789,6 @@ class Delete_St {
 	}
 	public function show_info() {//called in delete_st.php. Shows info of st to be deleted
 		$this->parse_input();
-		$this->explode_input();
 		if ($this->multiple) {
 			for ($i = 0; $i < sizeof($this->input); $i++) {
 				$info[] = Database::check_unique_username($this->input[$i], $this->type.'s', 1);
@@ -787,27 +807,26 @@ class Delete_St {
 class Set_Session {
 	private $input_session;
 	private $input_term;
+	private $start_date;
 	private $cur_session;
 	private $cur_term;
-	public function __construct($session = false, $term = false) {
+	public function __construct($session = false, $term = false, $start_date = null) {
 		$this->input_session = $session;
 		$this->input_term = $term;
+		$this->start_date = $start_date;
 		$period = $this->get_cur_sess_term();
 		$this->cur_session = $period['session'];
 		$this->cur_term = $period['term'];
 	}
-	private function parse_input($password) {
-		$class_array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE', 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
-		$promoted = Promote_Students::get_promoted($this->cur_session);
-		$error = false;
-		foreach ($class_array as $class) {
-			if (!in_array($class, $promoted) && !Database::check_unique_class_role($class, 'students')) {
-				$error = true;
-				break;
+	private function parse_input() {
+		if ($this->input_session != $this->cur_session) {
+			$promoted = Promote_Students::get_promoted($this->cur_session);
+			foreach (CLASSES as $class) {
+				if (!in_array($class, $promoted) && !Database::check_unique_class_role($class, 'students')) {
+					Error_Reg::set_errors('Please promote all classes.');
+					break;
+				}
 			}
-		}
-		if ($error && $this->input_session != $this->cur_session) {
-			Error_Reg::set_errors('PLEASE PROMOTE ALL CLASSES.');
 		}
 		$new_sess = explode('/', $this->cur_session);
 		$one = $new_sess[0];
@@ -817,7 +836,7 @@ class Set_Session {
 		$new_sess = $one.'/'.$two;
 		if ($this->input_session != $this->cur_session) {
 			if ($new_sess != $this->input_session) {
-				Error_Reg::set_errors('YOU CAN ONLY CHANGE SESSION TO '.$new_sess.'.');
+				Error_Reg::set_errors('You can only change session to '.$new_sess.'.');
 			}
 		}
 		switch ($this->cur_term) {
@@ -835,13 +854,10 @@ class Set_Session {
 				break;
 		}
 		if ($this->input_term != $next_term) {
-			Error_Reg::set_errors('YOU CAN ONLY CHANGE TERM TO '.$next_term.'.');
+			Error_Reg::set_errors('You can only change term to '.$next_term.'.');
 		}
-		if (empty($password)) {
-			Error_Reg::set_errors('PLEASE INPUT A PASSWORD.');
-		}
-		if (md5($password) !== md5($_COOKIE['admin_password'])) {
-			Error_Reg::set_errors('PLEASE INPUT A VALID PASSWORD.');
+		if (empty($this->start_date)) {
+			Error_Reg::set_errors('Please select a start date.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -849,14 +865,15 @@ class Set_Session {
 			die();
 		}
 	}
-	public function get_cur_sess_term() {//gets current session and term from modellib. called in set_sess.php
+	public static function get_cur_sess_term() {//gets current session and term from modellib. called in set_sess.php
 		try {
 			$cur_info = new Mod_Change_Session();
 			$info['session'] = $cur_info->get_current_info()['session'];
 			$info['term'] = $cur_info->get_current_info()['term'];		
+			$info['start_date'] = $cur_info->get_current_info()['start_date'];		
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: set_session.php');
 			die();
@@ -865,18 +882,18 @@ class Set_Session {
 	}
 	private function set_sess_term() {//connects to modellib
 		try {
-			$set = new Mod_Change_Session($this->input_session, $this->input_term);
+			$set = new Mod_Change_Session($this->input_session, $this->input_term, $this->start_date);
 			$set->set_sess();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: set_session.php');
 			die();
 		}
 	}
-	public function change_sess_term($password) {//amalgamates all methods. called in set_sess.php
-		$this->parse_input($password);
+	public function change_sess_term() {//amalgamates all methods. called in set_sess.php
+		$this->parse_input();
 		$this->set_sess_term();
 	}
 }
@@ -888,10 +905,10 @@ class Set_Subjects {
 	}
 	private function parse_input() {
 		if (empty($this->subjects)) {
-			Error_Reg::set_errors('PLEASE INPUT A SUBJECT TO BE ADDED.');
+			Error_Reg::set_errors('Please input subject(s) to be added.');
 		}
 		if (strpos($this->subjects, ';')) {
-			Error_Reg::set_errors('PLEASE INPUT A  VALID SUBJECT NAME.');
+			Error_Reg::set_errors('Please input a valid subject name.');
 		}
 		if (strpos($this->subjects, ',')) {
 			$subjects = explode(',', $this->subjects);
@@ -902,7 +919,7 @@ class Set_Subjects {
 			$subjects = array(trim($this->subjects));
 		}
 		if (Database::check_if_subject_exists($subjects)) {
-			Error_Reg::set_errors('SUBJECT(S) ALREADY EXISTS IN DATABASE.');
+			Error_Reg::set_errors('Subject(s) is already in curriculum.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -937,49 +954,64 @@ class Set_Subjects {
 		$this->add_subjects();
 	}
 }
-class Set_Class_Subjects {
-	private $class_subjects;
-	private $class;
-	public function __construct($class, $subjects) {
-		$this->class = $class;
-		$this->class_subjects = $subjects;
+class Set_Subject_Classes {
+	private $subject;
+	private $classes;
+	public function __construct($subject, $classes) {
+		$this->subject = $subject;
+		$this->classes = $classes;
 	}
 	private function parse_input() {
-		if (!$this->class_subjects) {
-			Error_Reg::set_errors('PLEASE TICK THE SUBJECTS YOU WANT TO ADD TO THE CLASS.');
-		}
+		// if (!$this->classes) {
+		// 	// Error_Reg::set_errors('Please tick the classes to offer the subject.');
+		// }
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			header('location: ./set_class_subjects.php');
+			header('location: ./set_class_subjects.php?'.$_SERVER['QUERY_STRING']);
 			die();
 		}
 	}
 	private function add_class_subjects() {//connects to modellib
+		if ($this->classes == 'all') {
+			$this->classes = [];
+			$listed = [];
+			foreach (CLASSES as $class) {
+				$match = [];
+				if (preg_match('/(jss) (\d)\w/i', $class, $match)) {
+					if (in_array($match[2], $listed)) continue;
+					$listed[] = $match[2];
+					$this->classes[] = $match[1].' '.$match[2];
+					continue;
+				}
+				$this->classes[] = $class;
+			}
+		}
 		try {
-			$set = new Mod_Add_Class_Subjects($this->class, $this->class_subjects);
+			$set = new Mod_Add_Subject_Classes($this->subject, $this->classes);
 			$set->add_class_subjects();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			header('location: ./set_class_subjects.php');
+			header('location: ./set_class_subjects.php?'.$_SERVER['QUERY_STRING']);
 			die();
 		}
 	}
-	public function amalg_add_class_subjects() {//amalgamates all methods. called in set_classsubjects.php
+	public function amalg_add_class_subjects() {//amalgamates all methods. called in set_class_subjects.php
 		$this->parse_input();
 		$this->add_class_subjects();
 	}
 }
 //the following classes handle setting class and subject teachers
 class Set_Teacher {
-	private $class;
+	private $class_subject;
+	private $subject;
 	private $teacher_id;
 	private $type;
 	private $subject_teachers;
-	public function __construct($type, $class, $id) {
+	public function __construct($type, $class_subject, $id) {
 		$this->type = $type;
-		$this->class = $class;
+		$this->class_subject = $class_subject;
 		if ($this->type == 'class') {
 			$this->teacher_id = $id;
 		} else if ($this->type == 'subject') {
@@ -987,21 +1019,21 @@ class Set_Teacher {
 		}
 	}
 	private function parse_input() {
-		if (!$this->class) {
-			Error_Reg::set_errors('PLEASE SELECT A CLASS.');
+		if (!$this->class_subject) {
+			Error_Reg::set_errors('Please select a teacher '.$this->type.'.');
 		}
-		//if ($this->type == 'class' && !$this->teacher_id) {
-		//	Error_Reg::set_errors('PLEASE SELECT A TEACHER.');
-		//}
-		//if ((!Database::read_classes('teacher_id', $this->teacher_id)) && (Database::read_classes('teacher_id', $this->teacher_id, 1)['class_name'] != $this->class)) {
-		//	Error_Reg::set_errors('TEACHER IS ALREADY A CLASS TEACHER OF ANOTHER CLASS');
-		//}
+		if ($this->type == 'class' && !$this->teacher_id) {
+			Error_Reg::set_errors('PLEASE SELECT A TEACHER.');
+		}
+		if ((!Database::read_classes('teacher_id', $this->teacher_id)) && (Database::read_classes('teacher_id', $this->teacher_id, 1)['class_name'] != $this->class_subject)) {
+			Error_Reg::set_errors('TEACHER IS ALREADY A CLASS TEACHER OF ANOTHER CLASS');
+		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
 			if ($this->type == 'class') {
 				$location = './set_class_teacher.php';
 			} else if ($this->type == 'subject') {
-				$location = './set_subject_teacher.php';
+				$location = './set_subject_teacher.php?'.$_SERVER['QUERY_STRING'];
 			} 
 			header('location: '.$location);
 			die();
@@ -1010,19 +1042,19 @@ class Set_Teacher {
 	private function add_teacher() {//connects to modellib
 		try {
 			if ($this->type == 'class') {
-				$set = new Mod_Set_Teacher($this->type, $this->class, $this->teacher_id);
+				$set = new Mod_Set_Teacher($this->type, $this->class_subject, $this->teacher_id);
 			} else if ($this->type == 'subject') {
-				$set = new Mod_Set_Teacher($this->type, $this->class, $this->subject_teachers);
+				$set = new Mod_Set_Teacher($this->type, $this->class_subject, $this->subject_teachers);
 			}
 			$set->set_teacher();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			if ($this->type == 'class') {
 				$location = './set_class_teacher.php';
 			} else if ($this->type == 'subject') {
-				$location = './set_subject_teacher.php';
+				$location = './set_subject_teacher.php?'.$_SERVER['QUERY_STRING'];
 			} 
 			header('location: '.$location);
 			die();
@@ -1066,12 +1098,12 @@ class Send_Mail {
 	}
 	private function parse_input() {
 		if (empty($this->mail)) {
-			Error_Reg::set_errors('PLEASE FILL ALL FILEDS.');
+			Error_Reg::set_errors('Please type a message.');
 		}
 		if ($this->rec_type != 'student_username' && $this->rec_type != 'staff_username' && $this->rec_type != 'admin') {
 			foreach ($this->receipient as $receipient) {
 				if (empty($receipient)) {
-					Error_Reg::set_errors('PLEASE SELECT A RECEIPIENT.');
+					Error_Reg::set_errors('Please select a receipient.');
 					break;
 				}
 			}
@@ -1079,19 +1111,19 @@ class Send_Mail {
 		if ($this->rec_type == 'student_username' || $this->rec_type == 'staff_username') {
 			foreach ($this->receipient as $receipient) {
 				if (Database::check_unique_username($receipient, $this->st_type.'s')) {
-					Error_Reg::set_errors(strtoupper('RECEIPIENT DOES NOT EXIST IN DATABASE.'));
+					Error_Reg::set_errors('Invalid receipient.');
 					break;
 				}	
 			}
 		}
-		//if ($this->appendages != false) {
-		//	foreach ($this->appendages['size'] as $size) {
-		//		if ($size > 1000000) {
-		//			Error_Reg::set_errors('APPENDED FILE MUST NOT BE MORE THAN 1 MB.');
-		//			break;
-		//		}
-		//	}
-		//}
+		if ($this->appendages != false) {
+			foreach ($this->appendages['size'] as $size) {
+				if ($size > 1000000) {
+					Error_Reg::set_errors('Each appended file must not be larger than 1MB.');
+					break;
+				}
+			}
+		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
 			$location = basename($_SERVER['HTTP_REFERER']);
@@ -1116,7 +1148,7 @@ class Send_Mail {
 			$send->send_mail();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = basename($_SERVER['HTTP_REFERER']);
 			header('location: '.$location);
@@ -1132,10 +1164,16 @@ class View_Mails {
 	private $mode;
 	private static $type;
 	private $username;
-	public function __construct($type, $username, $mode = false) {
+	private $search_text;
+	private $search = false;
+	public function __construct($type, $username, $mode = false, string $search_text = null) {
 		self::$type = $type;
 		$this->username = $username;
 		$this->mode = $mode;
+		if ($search_text) {
+			$this->search = true;
+			$this->search_text = $search_text;
+		}
 	}
 	public function new_mails() {
 		$conn = Database::connect_db('admin');
@@ -1154,13 +1192,13 @@ class View_Mails {
 	}
 	public function amalg_view_mails() {//amalgamates all functions. called in sent_mails.php
 		try {
-			$sent = new Mod_Read_Mails($this->mode, self::$type, $this->username);
-			return $sent->ret_mails();
+			$sent = new Mod_Read_Mails($this->mode, self::$type, $this->username, $this->search_text);
+			return $sent;
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			header('location: ./index.php');
+			header('location: ./index.php?pe='.base64_encode(self::$type).'&me='.base64_encode($this->username).'&e=1');
 			die();
 		}
 	}
@@ -1184,37 +1222,36 @@ class Add_Results {
 		$this->res_type = $type;
 	}
 	private function parse_input() {
-		foreach ($this->scores as $score) {
-			if ($score == '') {
-				Error_Reg::set_errors('PLEASE INPUT SCORE FOR ALL STUDENTS.');
-				break;
-			}	
-		}
+		// foreach ($this->scores as $score) {
+		// 	// if (empty($score) && $score != 0) {
+		// 	// 	Error_Reg::set_errors('Please input score for all students.');
+		// 	// 	break;
+		// 	// }	
+		// }
 		foreach ($this->scores as $score) {
 			if (preg_match('/[a-z]/i', $score)) {
-				echo 'what is this';
-				Error_Reg::set_errors('ALL SCORES MUST BE INTEGERS.');
+				Error_Reg::set_errors('Scores can only contain numbers.');
 				break;
 			}	
 		}
 		foreach ($this->scores as $score) {
 			if ($this->res_type == '1ST C.A. TEST' && $score > 15) {
-				Error_Reg::set_errors('SCORE INPUTTED BEYOND OBTAINABLE SCORE.');
+				Error_Reg::set_errors('Score inputted beyond obtainable score.');
 				break;
 			} else if ($this->res_type == '2ND C.A. TEST' && $score > 15) {
-				Error_Reg::set_errors('SCORE INPUTTED BEYOND OBTAINABLE SCORE.');
+				Error_Reg::set_errors('Score inputted beyond obtainable score.');
 				break;
 			} else if ($this->res_type == 'ASSIGNMENT' && $score > 10) {
-				Error_Reg::set_errors('SCORE INPUTTED BEYOND OBTAINABLE SCORE.');
+				Error_Reg::set_errors('Score inputted beyond obtainable score.');
 				break;
 			} else if ($this->res_type == 'EXAMINATION' && $score > 60) {
-				Error_Reg::set_errors('SCORE INPUTTED BEYOND OBTAINABLE SCORE.');
+				Error_Reg::set_errors('Score inputted beyond obtainable score.');
 				break;
 			}
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			header('location: ./add_results.php');
+			header('location: ./add_results.php?c='.base64_encode($this->subject.' - '.$this->class));
 			die();
 		}
 	}
@@ -1224,9 +1261,9 @@ class Add_Results {
 			$add->add_results();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 		    Error_Reg::set_err_session();
-			header('location: ./add_results.php');
+			header('location: ./add_results.php?c='.base64_encode($this->subject.' - '.$this->class));
 			die();
 		}
 	}
@@ -1235,7 +1272,7 @@ class Add_Results {
 		$this->insert_results();
 	}
 }
-//the following classes updates student to next class in db
+//the following classes updates student to next class in db or graduates sss 3 students
 class Promote_Students {
 	private $type;
 	private $students;
@@ -1256,9 +1293,12 @@ class Promote_Students {
 		$this->session = $one.'/'.$two;
 	}
 	private function parse_input() {
-		$class_array = array('JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SSS 1 ART', 'SSS 1 COMMERCIAL', 'SSS 1 SCIENCE', 'SSS 2 ART', 'SSS 2 COMMERCIAL', 'SSS 2 SCIENCE', 'SSS 3 ART', 'SSS 3 COMMERCIAL', 'SSS 3 SCIENCE');
+		$class_array = CLASSES;
 		if (empty($this->students)) {
-			Error_Reg::set_errors('PLEASE SELECT STUDENTS TO PROMOTE.');
+			Error_Reg::set_errors('Please select students to promote.');
+		}
+		if (empty($this->next_class)) {
+			Error_Reg::set_errors('Please select a next class.');
 		}
 		if (preg_match('/SSS 2/', $this->current_class)) {
 			$classes = array_slice($class_array, 12, 3);
@@ -1280,7 +1320,7 @@ class Promote_Students {
 			}
 		}
 		if ($error) {
-			Error_Reg::set_errors('PLEASE PROMOTE ALL PRECEDING CLASSES.');
+			Error_Reg::set_errors('Please promote all preceding classes.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -1294,13 +1334,13 @@ class Promote_Students {
 			$promote->promote_students();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: ./promote_students.php');
 			die();
 		}
 	}
-	public function get_promoted($sess) {
+	public static function get_promoted($sess) {
 		$session = explode('/', $sess);
 		$one = $session[0];
 		$one += 1;
@@ -1311,7 +1351,7 @@ class Promote_Students {
 			return Mod_Promote_Students::get_promoted_classes($session);
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: ./promote_students.php');
 			die();
@@ -1342,7 +1382,7 @@ class Graduate_Students {
 	}
 	private function parse_input() {
 		if (empty($this->students)) {
-			Error_Reg::set_errors('PLEASE SELECT STUDENTS TO PROMOTE.');
+			Error_Reg::set_errors('Please select students to pass out.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -1356,7 +1396,7 @@ class Graduate_Students {
 			$graduate->graduate_students();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: ./promote_students.php');
 			die();
@@ -1381,14 +1421,14 @@ class Register_Student {
 	}
 	private function parse_input() {
 		if (!$this->subjects) {
-			Error_Reg::set_errors('PLEASE CHOOSE THE SUBJECTS TO REGISTER FOR STUDENT.');
+			Error_Reg::set_errors('Please choose subjects to register for student.');
 		}
 		if (sizeof($this->subjects) > 15) {
-			Error_Reg::set_errors('YOU CAN\'T REGISTER MORE THAN 15 SUBJECTS FOR STUDENT.');
+			Error_Reg::set_errors('You can\'t register more than 15 subjects for student.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
-			header('location: ./students_regx.php?id='.base64_encode($this->student_id).'&cl='.base64_encode($this->student_class));
+			header('location: ./student_registration.php?id='.base64_encode($this->student_id).'&cl='.base64_encode($this->student_class));
 			die();
 		}
 	}
@@ -1398,9 +1438,9 @@ class Register_Student {
 			return $reg->register_student();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
-			header('location: ./students_regx.php?id='.base64_encode($this->student_id).'&cl='.base64_encode($this->student_class));
+			header('location: ./student_registration.php?id='.base64_encode($this->student_id).'&cl='.base64_encode($this->student_class));
 			die();
 		}
 	}
@@ -1422,7 +1462,7 @@ class Check_Registered {
 			return $students->check_registered();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			header('location: ./student_registration.php?id='.base64_encode($this->student_id).'&cl='.base64_encode($this->student_class));
 			die();
@@ -1448,12 +1488,13 @@ class Check_Class_Result {
 		$this->class_sub = $class_sub;
 	}
 	private function parse_input() {
-		if (basename($_SERVER['HTTP_REFERER']) == 'subject_results.php') {
+		$referer = trim(preg_split('/\?/', basename($_SERVER['HTTP_REFERER']))[0]);
+		if ($referer == 'subject_results.php') {
 			if (empty($this->subject) || empty($this->class)) {
 				Error_Reg::set_errors('PLEASE SELECT CLASS AND RESULT TYPE.');
 			}
 			if (empty($this->term)) {
-				Error_Reg::set_errors('PLEASE SELECT A TERM.');
+				Error_Reg::set_errors('Please select a term.');
 			}
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
@@ -1468,7 +1509,7 @@ class Check_Class_Result {
 			return Database::check_class_result($this->subject, $this->class, $this->session, $this->term, $this->type, $this->ret, $this->class_sub);
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = $_SERVER['HTTP_REFERER'];
 			header('location: '.$location);
@@ -1490,8 +1531,11 @@ class Check_Student_Result {
 		$this->term = $term;
 	}
 	private function parse_input() {
+		if (empty($this->session)) {
+			Error_Reg::set_errors('Please select a session.');
+		}
 		if (empty($this->term)) {
-			Error_Reg::set_errors('PLEASE SELECT A TERM.');
+			Error_Reg::set_errors('Please select a term.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
 			Error_Reg::set_err_session();
@@ -1505,11 +1549,11 @@ class Check_Student_Result {
 			return $result->check_student_result();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = './student_results.php';
-			//header('location: '.$location);
-			//die();
+			header('location: '.$location);
+			die();
 		}
 	}
 	public function amalg_check_student_result() {
@@ -1542,7 +1586,7 @@ class Get_Unpublished_Results {
 			return $results->get_unpublished_results();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = $_SERVER['HTTP_REFERER'];
 			header('location: '.$location);
@@ -1561,7 +1605,7 @@ class Publish_Results {
  	}
  	private function parse_input() {
  		if (sizeof($this->results) < 1) {
- 			Error_Reg::set_errors('PLEASE SELECT A RESULT TO PUBLISH.');
+ 			Error_Reg::set_errors('Please select a result to publish.');
  		}
  		if (sizeof(Error_Reg::$errors) > 0) {
  			Error_Reg::set_err_session();
@@ -1575,7 +1619,7 @@ class Publish_Results {
 			$publish->publish_results();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = './publish_results.php';
 			header('location: '.$location);
@@ -1610,15 +1654,15 @@ class Mark_Attendance {
 			$mark->mark_attendance();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			$location = './take_attendance.php';
 			header('location: '.$location);
 			die();
 		}
  	}
- 	public function get_attendance($id, $class, $sess, $term) {
- 		return Mod_Mark_Attendance::calculate_attendance($id, $class, $sess, $term);
+ 	public static function get_attendance($id, $sess, $term) {
+ 		return Mod_Mark_Attendance::calculate_attendance($id, $sess, $term);
  	}
  	public function amalg_mark_attendance() {
  		$this->parse_input();
@@ -1641,21 +1685,28 @@ class Write_Comments {
 	}
 	private function parse_input() {
 		$status = false;
+		$exceeding_len = false;
 		foreach ($this->comments as $key => $value) {
 			if ($value == '') {
 				$status = true;
 				break;
 			}
+			if (strlen($value) > 120) {
+				$exceeding_len = true;
+			}
 		}
 		if ($status) {
-			Error_Reg::set_errors('PLEASE WRITE COMMENTS FOR ALL STUDENTS.');
+			Error_Reg::set_errors('Please write comments for all students.');
+		}
+		if ($exceeding_len) {
+			Error_Reg::set_errors('No comment can be longer than 120 letters.');
 		}
 		if (sizeof(Error_Reg::$errors) > 0) {
  			Error_Reg::set_err_session();
  			if ($this->type == 'class_teacher') {
  				$location = './write_classteacher_comments.php';
  			} else {
- 				$location = './write_classteacher_comments.php';
+ 				$location = './write_principal_comments.php';
  			}
  			header('location: '.$location);
 			die();
@@ -1676,7 +1727,7 @@ class Write_Comments {
 			$write->write_comments();
 		} catch (CustomException $e) {
 			handle_exception_obj($e);
-			Error_Reg::set_errors('SOMETHING WENT WRONG. PLEASE TRY AGAIN LATER.');
+			Error_Reg::set_errors('Something went wrong, please try again.');
 			Error_Reg::set_err_session();
 			if ($this->type == 'class_teacher') {
  				$location = './write_classteacher_comments.php';
@@ -1687,7 +1738,7 @@ class Write_Comments {
 			die();
 		}
  	}
- 	public function get_comments($id, $session, $term) {
+ 	public static function get_comments($id, $session, $term) {
  		return Mod_Write_Comments::get_comments($id, $session, $term);
  	}
 	public function amalg_write_comments() {
@@ -1695,4 +1746,42 @@ class Write_Comments {
 		$this->write();
 	}
 }
-?>
+//following is a class class
+function class_info(string $class_name) : Mod_Class {
+	if (empty($class_name)) {
+		Error_Reg::set_errors('Please select a class.');
+	}
+	if (sizeof(Error_Reg::$errors) > 0) {
+		Error_Reg::set_err_session();
+		header('location: ./class_info.php?'.$_SERVER['QUERY_STRING']);
+		die();
+	} else {return new Mod_Class($class_name);}
+}
+
+
+// following snippet takes care of school blog
+
+function publish_post($title, $image, $body) {
+	if (empty($title) || empty($body)) {
+		Error_Reg::set_errors('Please fill all required fields.');
+	}
+	if (strlen($title) > 120) {
+		Error_Reg::set_errors('Length of title must not be more than 254 characters.');
+	}
+	if ($image) {
+		$type = trim(explode('/', $image['type'])[0]);
+		$extension = trim(explode('/', $image['type'])[1]);
+		if ($type != 'image') {
+			Error_Reg::set_errors('Only an image file can be uploaded.');
+		}
+		if ($image['size'] > 5000000) {
+			Error_Reg::set_errors('Image size must not be more than 5MB.');
+		}
+	}
+	if (!$image) $extension = NULL;
+	if (sizeof(Error_Reg::$errors) > 0) {
+		Error_Reg::set_err_session();
+		header('location: '.$_SERVER['HTTP_REFERER']);
+		die();
+	} else {return new Mod_Blog([':title'=>$title, ':image'=>$extension, ':content'=>$body], $image['tmp_name']);} 
+}

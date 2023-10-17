@@ -1,0 +1,110 @@
+#following for students table
+
+create table students (
+student_id int unsigned auto_increment,
+student_first_name varchar (20) not null,
+student_last_name varchar (25) not null,
+student_username varchar (12) not null,
+student_class varchar (16) not null,
+primary key (student_id),
+unique (student_username)
+)
+ENGINE = InnoDB
+
+#following for students_bio table
+
+create table students_bio (
+student_id int unsigned auto_increment,
+parent_name varchar (45) not null,
+parent_phone_number varchar (14) not null,
+parent_email varchar (35) null,
+student_dob date not null,
+student_address varchar (100) not null,
+student_storg varchar (12) not null,
+student_gender enum('FEMALE','MALE') not null,
+student_religion enum('CHRISTIANITY','ISLAM','OTHERS') not null,
+student_passport varchar (38) not null,
+primary key (student_id),
+unique (student_passport)
+)
+ENGINE = InnoDB
+
+#following for students_bio table
+
+create table mails (
+username varchar (13) primary key,
+counter smallint
+)
+ENGINE = InnoDB
+
+#following for staffs table
+
+create table staffs (
+staff_id int unsigned auto_increment,
+staff_first_name varchar (20) not null,
+staff_last_name varchar (25) not null,
+staff_username varchar (12) not null,
+staff_role varchar (25) not null,
+primary key (staff_id),
+unique (staff_username)
+)
+ENGINE = InnoDB
+
+#following for staffs table
+
+create table staffs_bio (
+staff_id int unsigned ,
+staff_phone_number varchar (14) not null,
+staff_email varchar (35) null,
+staff_dob date not null,
+nok_name varchar (45) not null,
+nok_phone_number varchar (14) not null,
+staff_address varchar (100) not null,
+staff_storg varchar (12) not null,
+staff_gender enum('FEMALE', 'MALE') not null,
+staff_religion enum('CHRISTIANITY','ISLAM','OTHERS') not null,
+staff_passport varchar (38) not null,
+primary key (staff_id),
+unique (staff_passport)
+)
+ENGINE = InnoDB
+
+#following for classes table
+
+create table classes (
+class_name varchar (16) not null unique,
+class_teacher_id smallint unsigned null
+)
+ENGINE = InnoDB
+
+#following for subjects table
+
+create table subjects (
+subject_name varchar (30) not null unique,
+classes varchar (142) null,
+jss_1 smallint null,
+jss_2 smallint null,
+jss_3 smallint null,
+sss_1_art smallint null,
+sss_1_commercial smallint null,
+sss_1_science smallint null,
+sss_2_art smallint null,
+sss_2_commercial smallint null,
+sss_2_science smallint null,
+sss_3_art smallint null,
+sss_3_commercial smallint null,
+sss_3_science smallint null
+)
+ENGINE = InnoDB
+
+#following for blog_posts table
+
+create table blog_posts (
+post_id int not null auto_increment primary key,
+post_title varchar(120) not null unique,
+post_content text not null,
+post_time datetime not null,
+file_type varchar(4) null,
+fulltext (post_content)
+)
+ENGINE = InnoDB

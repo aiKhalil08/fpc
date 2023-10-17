@@ -1,13 +1,122 @@
 <?php
+require_once '../bin/contr.php';
 require_once '../bin/start_session.php';
 require_once '../bin/errorlib.php';
 require '../bin/page_view.php';
+require '../bin/sidebar_items.php';
 check_login('admin_username', './login.php');
-show_header('INDEX');
-?>
-<h1>HI, <?= strtoupper($_COOKIE['admin_username']) ?></h1>
-<?php
-$sidebar_array  = array('ADD STUDENT' => './addstudent.php', 'ADD STAFF' => './addstaff.php', 'VIEW ALL STUDENTS' => './allstudents.php', 'VIEW ALL STAFFS' => './allstaffs.php', 'VIEW ALL STAFFS' => './allstaffs.php', 'SEARCH STUDENT BY CLASS' => './search_student.php?method=lc', 'SEARCH STUDENT BY SURNAME' => './search_student.php?method=us', 'SEARCH STAFF BY ROLE' => './search_staff.php?method=or', 'SEARCH STAFF BY SURNAME' => './search_staff.php?method=us', 'DELETE STUDENT(USERNAME)' => './delete_student.php', 'DELETE STAFF(USERNAME)' => './delete_staff.php', 'PROMOTE STUDENTS'=>'./promote_students.php', 'SET SESSION AND TERM.' => './set_session.php', 'SET ALL SUBJECTS.' => './set_all_subjects.php', 'SET SUBJECTS FOR EACH CLASS.' => './set_class_subjects.php', 'SET CLASS TEACHER.' => './set_class_teacher.php', 'SET SUBJECT TEACHER.' => './set_subject_teacher.php', 'MAILBOX.' => '../mailbox/index.php?pe='.base64_encode('admin').'&me='.base64_encode('admin'));
-create_sidebar($sidebar_array);
-show_footer();
-?>
+
+$error = false;
+try {
+    $posts = new Mod_Blogs();
+    $count = $posts->count_posts();
+    $posts = $posts->retrieve_posts();
+    $schoolInfo = schoolInfo();
+} catch (Exception $e) {
+    $error = true;
+}
+?> 
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+	<link rel="stylesheet" href="../style/style.css">
+    <!-- <script src="https://kit.fontawesome.com/39a92e8fbb.js" crossorigin="anonymous"></script> -->
+    <link rel="stylesheet" href="../style/fontawesome/css/all.css">
+	<title>ADMIN</title>
+</head>
+<body>
+    <header>
+        <div id='header_div' class='fa-xl'>
+            <div id='motto'>If education is exspensive, try ignorance.</div>
+            <i id='sidebar_control' class="fa-solid fa-bars"></i>
+            <a id='home_icon' href='./index.php'><i class="fa-solid fa-house"></i></a>
+            <a id='logout_icon' href='./logout.php'><i class="fa-solid fa-right-from-bracket"></i></a>
+        </div>
+	</header>
+    <aside class='sidebar'>
+        <div class='header'>
+            <figure>
+                <figcaption>ADMINISTRATOR</figcaption>
+                <i class="fa-solid fa-user fa-8x"></i>
+            </figure>
+        </div>
+        <nav>
+            <ul><?= create_sidebar('admin');?></ul>
+        </nav>
+    </aside>
+	<main>
+        <?=check_js_enabled();?>
+        <section class='index'>
+            <article id='school_info'>
+                <header><h3>SCHOOL INFO</h3></header>
+                <div>
+                    <p><span>Current Session: </span><span><?=$schoolInfo['current_session']?></span></p>
+                    <p><span>Current Term: </span><span><?=$schoolInfo['current_term']?></span></p>
+                    <p><span>Term started: </span><span><?=$schoolInfo['start_date']?></span></p>
+                    <p><span>Days open: </span><span><?=$schoolInfo['days_open']?></span></p>
+                    <p><span>Number of students: </span><span><?=$schoolInfo['students_count']?></span></p>
+                    <p><span>Number of staff: </span><span><?=$schoolInfo['staff_count']?></span></p>
+                    <p><span>Number of subjects offered in school: </span><span><?=$schoolInfo['subjects_count']?></span></p>
+                    <p><span>Number of classes in school: </span><span><?=$schoolInfo['class_count']?></span></p>
+                </div>
+            </article>
+            <?php if (!$error) {?>
+            <article id='school_blog'>
+                <header><h3>SCHOOL BLOG</h3></header>
+                <div id='posts_slide'>
+                <?php
+                if (count($posts) > 0) {
+                    echo '<span id=\'prev_slide\'>&#x276c;</span>';
+                    echo '<span id=\'next_slide\'>&#x276d;</span>';
+                    foreach($posts as $post) {
+                        echo '<article class=\'slide post_slide\'>';
+                        echo '<a href=\'../school_blog/article.php?p='.$post['post_id'].'\' target=\'_blank\'>';
+                        if (is_file('../school_blog/posts/images/'.$post['post_id'].'.'.$post['file_type'])) {
+                        echo '<img src=\'../school_blog/image.php?id='.$post['post_id'].'&type='.$post['file_type'].'\' alt=\''.$post['post_title'].'\'>';
+                        }
+                        echo '<h4>'.$post['post_title'].'</h4>';
+                        echo '<div class=\'article_content\'>'.evaluateText($post['subcontent']).'continue reading...</div>';
+                        echo '<div class=\'post_time\'>Posted: '.$post['post_date'].'</div>';
+                        echo '</a>';
+                        echo '</article>';
+                    }
+                    echo '<div id=\'dots_bar\'><div>';
+                    for($i = 0; $i < count($posts); $i++) {
+                        echo '<span class=\'dots\'></span>';
+                    }
+                    echo '</div></div>';
+                } else {
+                    echo '<strong>NO BLOG POSTS.</strong>';
+                }
+                ?>
+                </div>
+            </article> <?php }?>
+        </section>
+    </main>
+    <footer>
+        <div>
+            <span><a href='../school/index.php' target='_blank'>Homepage</a></span>
+            <span><a href='../school/index.php' target='_blank'>Follow on Facebook</a></span>
+            <span><a href='https://wa.me/+2347062278821/?text=Hello FPC admin, I am directed here from your website. I want to make an enquiry about the school. My name is __' target='_blank'>Chat on Whatsapp</a></span>
+        </div>
+        <div>
+            <span><a href='../school_blog/all_posts.php' target='_blank'>School Blog</a></span>
+            <span><a href='../school/about_school.php' target='_blank'>About school</a></span>
+            <span id='last_one'></span>
+        </div>
+        <div id='devs_contact'><a href='../school/developers_contact.php' target='_blank'>Contact Developer</a></div>
+        <div id='copyright_info'>&#x00a9; <?=date('Y')?> FOCAL POINT COLLEGE.</div>
+    </footer>
+</body>
+<script src='../js/layout.js'></script>
+<script src='../js/posts_slide.js'></script>
+<script>
+<?php if (count($posts) > 0) {
+    ?>create_slide_show(document.querySelector('div#posts_slide'), 10000);<?php
+}?>
+</script>
+</html>
+
